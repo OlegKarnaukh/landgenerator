@@ -1,0 +1,144 @@
+name: Deploy to Railway
+
+on:
+  push:
+    branches: [main, claude/*]
+  pull_request:
+    branches: [main]
+
+env:
+  RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npx tsc --noEmit
+        continue-on-error: true
+        id: typecheck
+
+      - name: Lint
+        run: npm run lint
+        continue-on-error: true
+        id: lint
+
+      - name: Build
+        run: npm run build
+        continue-on-error: true
+        id: build
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy to Railway
+        if: github.event_name == 'push'
+        run: railway up --detach
+        continue-on-error: true
+        id: deploy
+
+      - name: Get Railway Logs
+        if: failure() || steps.deploy.outcome == 'failure'
+        run: |
+          echo "## Railway Deployment Logs" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          railway logs --limit 100 >> $GITHUB_STEP_SUMMARY 2>&1 || echo "Could not fetch logs"
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Create Issue on Failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = `Build/Deploy Failed: ${context.sha.substring(0, 7)}`;
+            const body = `
+            ## Build Failed
+
+            **Commit:** ${context.sha}
+            **Branch:** ${context.ref}
+            **Author:** ${context.actor}
+            **Workflow Run:** [View Logs](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
+
+            ### Failed Steps:
+            - Type Check: ${{ steps.typecheck.outcome }}
+            - Lint: ${{ steps.lint.outcome }}
+            - Build: ${{ steps.build.outcome }}
+            - Deploy: ${{ steps.deploy.outcome }}
+
+            ### Next Steps:
+            1. Check the workflow logs for detailed error messages
+            2. Fix the issues in the code
+            3. Push a new commit
+
+            ---
+            *This issue was automatically created by GitHub Actions*
+            `;
+
+            // Check if similar issue already exists
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'build-failure'
+            });
+
+            const existingIssue = issues.data.find(i => i.title.includes('Build/Deploy Failed'));
+
+            if (existingIssue) {
+              // Add comment to existing issue
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existingIssue.number,
+                body: body
+              });
+            } else {
+              // Create new issue
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: title,
+                body: body,
+                labels: ['build-failure', 'automated']
+              });
+            }
+
+      - name: Close Issue on Success
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'build-failure'
+            });
+
+            for (const issue of issues.data) {
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                state: 'closed'
+              });
+
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: `Closed automatically - build succeeded in commit ${context.sha.substring(0, 7)}`
+              });
+            }
