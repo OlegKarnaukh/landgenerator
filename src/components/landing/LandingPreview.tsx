@@ -20,7 +20,19 @@ interface LandingPreviewProps {
 }
 
 export function LandingPreview({ sections }: LandingPreviewProps) {
-  const sortedSections = [...sections].sort((a, b) => a.order - b.order);
+  // Guard against undefined or non-array sections
+  if (!sections || !Array.isArray(sections) || sections.length === 0) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center p-8">
+          <p className="text-gray-500 text-lg">No sections to display</p>
+          <p className="text-gray-400 text-sm mt-2">Try generating the landing page again</p>
+        </div>
+      </div>
+    );
+  }
+
+  const sortedSections = [...sections].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
   return (
     <div className="min-h-screen bg-white">

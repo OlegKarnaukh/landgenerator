@@ -43,6 +43,10 @@ export default function GeneratePage() {
         throw new Error(data.error || 'Failed to generate');
       }
 
+      // Validate response has sections
+      if (!data.sections || !Array.isArray(data.sections)) {
+        throw new Error('Invalid response: no sections generated');
+      }
       setLanding(data);
       setShowPreview(true);
     } catch (err: any) {
