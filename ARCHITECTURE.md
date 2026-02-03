@@ -535,3 +535,21 @@ function enhancePrompt(prompt: string, style: string): string {
 - Landings created
 - Free-to-paid conversion rate
 - AI cost per landing (target: <$0.50)
+
+---
+
+## 13. Changelog
+
+### 2026-02-03: MVP v0.1 - First Working Generation
+- [x] AI landing generation working (gpt-4o-mini)
+- [x] 7 section types: Hero, Features, Testimonials, Pricing, CTA, FAQ, Stats
+- [x] Deployed to Railway
+- [x] Description limit: 20,000 characters (for detailed copywriting)
+- [x] GitHub Actions CI/CD pipeline
+
+**Known Issues:**
+- AI oversimplifies detailed copywriting input
+- Converts custom text to generic marketing clichés
+- Needs "preserve original copy" mode
+
+**Next Priority:** Improve prompt to respect user's copywriting
