@@ -2,8 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { nanoid } from 'nanoid';
 
+// Increase function timeout for long prompts (Railway/Vercel)
+export const maxDuration = 60; // 60 seconds
+export const runtime = 'nodejs';
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
+  timeout: 55000, // 55 seconds timeout for OpenAI requests
 });
 
 const SYSTEM_PROMPT = `You are an expert landing page designer. Your task is to structure the user's content into a landing page JSON format.
