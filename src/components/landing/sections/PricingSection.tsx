@@ -75,11 +75,13 @@ function PricingCard({ plan }: { plan: Plan }) {
 
       <div className="text-center mb-8">
         <span className="text-5xl font-bold text-gray-900">
-          ${plan.price}
+          {plan.price.toLocaleString('ru-RU')}{plan.currency || '₽'}
         </span>
-        <span className="text-gray-500 ml-1">
-          /{plan.period || 'mo'}
-        </span>
+        {plan.period && (
+          <span className="text-gray-500 ml-1">
+            /{plan.period}
+          </span>
+        )}
       </div>
 
       <ul className="space-y-4 mb-8">
