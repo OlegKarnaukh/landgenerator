@@ -32,7 +32,8 @@ export const PRICING = {
 // AI Generation Settings
 export const AI_CONFIG = {
   defaultModel: 'gpt-4o-mini',
-  maxTokensPerGeneration: 2000,
+  maxTokensPerGeneration: 4000,
+  maxDescriptionLength: 20000,
   defaultImageSize: '1792x1024' as const,
   imageQuality: 'standard' as const,
 } as const;

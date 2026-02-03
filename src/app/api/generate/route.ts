@@ -86,9 +86,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (description.length > 2000) {
+    if (description.length > 20000) {
       return NextResponse.json(
-        { error: 'Description too long (max 2000 characters)' },
+        { error: 'Description too long (max 20000 characters)' },
         { status: 400 }
       );
     }
@@ -105,7 +105,7 @@ Generate compelling, conversion-focused content. Make it specific to this produc
         { role: 'user', content: userPrompt },
       ],
       temperature: 0.7,
-      max_tokens: 2000,
+      max_tokens: 4000,
       response_format: { type: 'json_object' },
     });
 
