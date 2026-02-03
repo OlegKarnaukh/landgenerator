@@ -24,7 +24,7 @@ export default function HomePage() {
             <Link href="/login">
               <Button variant="ghost">Log in</Button>
             </Link>
-            <Link href="/register">
+            <Link href="/generate">
               <Button>Get Started</Button>
             </Link>
           </div>
@@ -47,20 +47,15 @@ export default function HomePage() {
             Edit visually without burning AI tokens.
           </p>
 
-          {/* Main CTA - Input */}
+          {/* Main CTA */}
           <div className="max-w-xl mx-auto mb-8">
-            <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="Describe your product or service..."
-                className="flex-1 px-4 py-3 rounded-lg border border-input bg-background text-lg focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-              <Button size="lg" className="px-6">
-                Generate
+            <Link href="/generate">
+              <Button size="lg" className="px-8 py-6 text-lg">
+                Create Your Landing Page
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
-            </div>
-            <p className="text-sm text-muted-foreground mt-2">
+            </Link>
+            <p className="text-sm text-muted-foreground mt-4">
               Free to try. No credit card required.
             </p>
           </div>
@@ -130,7 +125,7 @@ export default function HomePage() {
           <p className="text-muted-foreground mb-8">
             Join thousands of entrepreneurs who build landing pages with AI.
           </p>
-          <Link href="/register">
+          <Link href="/generate">
             <Button size="lg">
               Start for Free
               <ArrowRight className="ml-2 h-5 w-5" />
