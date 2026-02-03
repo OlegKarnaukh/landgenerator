@@ -1,4 +1,4 @@
-name: Deploy to Railway
+name: Build & Deploy to Railway
 
 on:
   push:
@@ -10,8 +10,12 @@ env:
   RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
 jobs:
-  deploy:
+  build:
+    name: Build & Test
     runs-on: ubuntu-latest
+    outputs:
+      build_status: ${{ steps.build.outcome }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -26,97 +30,203 @@ jobs:
         run: npm ci
 
       - name: Type check
-        run: npx tsc --noEmit
-        continue-on-error: true
         id: typecheck
+        run: npx tsc --noEmit 2>&1 | tee typecheck.log || true
 
       - name: Lint
-        run: npm run lint
-        continue-on-error: true
         id: lint
+        run: npm run lint 2>&1 | tee lint.log || true
 
       - name: Build
-        run: npm run build
-        continue-on-error: true
         id: build
+        run: npm run build 2>&1 | tee build.log
+
+      - name: Upload build logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: |
+            typecheck.log
+            lint.log
+            build.log
+          retention-days: 7
+
+      - name: Build Summary
+        if: always()
+        run: |
+          echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Step | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Type Check | ${{ steps.typecheck.outcome }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Lint | ${{ steps.lint.outcome }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build | ${{ steps.build.outcome }} |" >> $GITHUB_STEP_SUMMARY
+
+  deploy:
+    name: Deploy to Railway
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && needs.build.result == 'success'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check Railway Token
+        run: |
+          if [ -z "$RAILWAY_TOKEN" ]; then
+            echo "::error::RAILWAY_TOKEN secret is not set!"
+            echo "Please add RAILWAY_TOKEN to your repository secrets."
+            exit 1
+          fi
+          echo "✓ Railway token configured"
 
       - name: Install Railway CLI
         run: npm install -g @railway/cli
 
       - name: Deploy to Railway
-        if: github.event_name == 'push'
-        run: railway up --detach
-        continue-on-error: true
         id: deploy
+        run: |
+          echo "Deploying to Railway..."
+          railway up --detach 2>&1 | tee deploy.log
+
+          # Extract deployment URL if available
+          DEPLOY_URL=$(railway status --json 2>/dev/null | jq -r '.deploymentUrl // empty' || true)
+          if [ -n "$DEPLOY_URL" ]; then
+            echo "deployment_url=$DEPLOY_URL" >> $GITHUB_OUTPUT
+            echo "✓ Deployed to: $DEPLOY_URL"
+          fi
+
+      - name: Wait for deployment
+        run: |
+          echo "Waiting for deployment to be ready..."
+          sleep 30
+
+      - name: Health Check
+        id: health
+        continue-on-error: true
+        run: |
+          DEPLOY_URL=$(railway variables get RAILWAY_PUBLIC_DOMAIN 2>/dev/null || true)
+          if [ -n "$DEPLOY_URL" ]; then
+            echo "Checking health at https://$DEPLOY_URL/api/health"
+            HTTP_STATUS=$(curl -s -o response.json -w "%{http_code}" "https://$DEPLOY_URL/api/health" || echo "000")
+            echo "HTTP Status: $HTTP_STATUS"
+
+            if [ "$HTTP_STATUS" = "200" ]; then
+              echo "✓ Health check passed"
+              cat response.json | jq .
+            else
+              echo "✗ Health check failed"
+              cat response.json 2>/dev/null || true
+            fi
+
+            echo "health_status=$HTTP_STATUS" >> $GITHUB_OUTPUT
+            echo "deploy_url=https://$DEPLOY_URL" >> $GITHUB_OUTPUT
+          else
+            echo "Could not get deployment URL"
+          fi
 
       - name: Get Railway Logs
-        if: failure() || steps.deploy.outcome == 'failure'
+        if: failure()
         run: |
-          echo "## Railway Deployment Logs" >> $GITHUB_STEP_SUMMARY
+          echo "## Railway Logs (last 100 lines)" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
           railway logs --limit 100 >> $GITHUB_STEP_SUMMARY 2>&1 || echo "Could not fetch logs"
           echo '```' >> $GITHUB_STEP_SUMMARY
 
+      - name: Deploy Summary
+        if: always()
+        run: |
+          echo "## Deploy Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Item | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Status | ${{ steps.deploy.outcome }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Health | ${{ steps.health.outputs.health_status || 'N/A' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| URL | ${{ steps.health.outputs.deploy_url || 'N/A' }} |" >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload deploy logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deploy-logs
+          path: |
+            deploy.log
+            response.json
+          retention-days: 7
+
+  notify:
+    name: Notify on Failure
+    needs: [build, deploy]
+    runs-on: ubuntu-latest
+    if: failure()
+
+    steps:
       - name: Create Issue on Failure
-        if: failure()
         uses: actions/github-script@v7
         with:
           script: |
-            const title = `Build/Deploy Failed: ${context.sha.substring(0, 7)}`;
+            const title = `🚨 Deploy Failed: ${context.sha.substring(0, 7)}`;
             const body = `
-            ## Build Failed
+## Deployment Failed
 
-            **Commit:** ${context.sha}
-            **Branch:** ${context.ref}
-            **Author:** ${context.actor}
-            **Workflow Run:** [View Logs](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
+**Commit:** \`${context.sha}\`
+**Branch:** \`${context.ref.replace('refs/heads/', '')}\`
+**Author:** @${context.actor}
+**Workflow:** [View Logs](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
 
-            ### Failed Steps:
-            - Type Check: ${{ steps.typecheck.outcome }}
-            - Lint: ${{ steps.lint.outcome }}
-            - Build: ${{ steps.build.outcome }}
-            - Deploy: ${{ steps.deploy.outcome }}
+### Status
+| Job | Result |
+|-----|--------|
+| Build | ${{ needs.build.result }} |
+| Deploy | ${{ needs.deploy.result }} |
 
-            ### Next Steps:
-            1. Check the workflow logs for detailed error messages
-            2. Fix the issues in the code
-            3. Push a new commit
+### Next Steps
+1. Click "View Logs" above to see detailed error messages
+2. Download build artifacts for full logs
+3. Fix the issues and push a new commit
 
-            ---
-            *This issue was automatically created by GitHub Actions*
+---
+*🤖 Automated issue by GitHub Actions*
             `;
 
-            // Check if similar issue already exists
             const issues = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,
               state: 'open',
-              labels: 'build-failure'
+              labels: 'deploy-failure'
             });
 
-            const existingIssue = issues.data.find(i => i.title.includes('Build/Deploy Failed'));
+            const existingIssue = issues.data.find(i => i.title.includes('Deploy Failed'));
 
             if (existingIssue) {
-              // Add comment to existing issue
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: existingIssue.number,
-                body: body
+                body: `### Update: ${new Date().toISOString()}\n\n${body}`
               });
+              console.log(`Updated issue #${existingIssue.number}`);
             } else {
-              // Create new issue
-              await github.rest.issues.create({
+              const newIssue = await github.rest.issues.create({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 title: title,
                 body: body,
-                labels: ['build-failure', 'automated']
+                labels: ['deploy-failure', 'automated']
               });
+              console.log(`Created issue #${newIssue.data.number}`);
             }
 
-      - name: Close Issue on Success
-        if: success()
+  close-issue:
+    name: Close Issue on Success
+    needs: [build, deploy]
+    runs-on: ubuntu-latest
+    if: success()
+
+    steps:
+      - name: Close Deploy Failure Issues
         uses: actions/github-script@v7
         with:
           script: |
@@ -124,10 +234,17 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               state: 'open',
-              labels: 'build-failure'
+              labels: 'deploy-failure'
             });
 
             for (const issue of issues.data) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: `✅ Fixed in commit ${context.sha.substring(0, 7)}\n\n[View successful deploy](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`
+              });
+
               await github.rest.issues.update({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
@@ -135,10 +252,5 @@ jobs:
                 state: 'closed'
               });
 
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: issue.number,
-                body: `Closed automatically - build succeeded in commit ${context.sha.substring(0, 7)}`
-              });
+              console.log(`Closed issue #${issue.number}`);
             }
