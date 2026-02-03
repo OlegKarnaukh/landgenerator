@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,18 +9,22 @@ export async function GET() {
     uptime: process.uptime(),
     environment: process.env.NODE_ENV,
     checks: {
-      database: 'unknown',
+      database: 'skipped',
       memory: 'unknown',
+      openai: process.env.OPENAI_API_KEY ? 'configured' : 'missing',
     },
   };
 
-  // Check database connection
-  try {
-    await db.$queryRaw`SELECT 1`;
-    health.checks.database = 'ok';
-  } catch (error) {
-    health.checks.database = 'error';
-    health.status = 'degraded';
+  // Check database connection only if DATABASE_URL is set
+  if (process.env.DATABASE_URL) {
+    try {
+      const { db } = await import('@/lib/db');
+      await db.$queryRaw`SELECT 1`;
+      health.checks.database = 'ok';
+    } catch (error) {
+      health.checks.database = 'error';
+      health.status = 'degraded';
+    }
   }
 
   // Check memory usage
@@ -33,6 +36,11 @@ export async function GET() {
     health.checks.memory = 'warning';
   } else {
     health.checks.memory = 'ok';
+  }
+
+  // OpenAI key is critical
+  if (!process.env.OPENAI_API_KEY) {
+    health.status = 'degraded';
   }
 
   const statusCode = health.status === 'ok' ? 200 : 503;
