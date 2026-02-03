@@ -5,19 +5,20 @@ interface Stat {
 
 interface StatsData {
   title?: string;
-  stats: Stat[];
+  stats?: Stat[];
   style?: 'simple' | 'cards' | 'gradient';
 }
 
 export function StatsSection({ data }: { data: StatsData }) {
   const style = data.style || 'simple';
+  const stats = data.stats || [];
 
   if (style === 'gradient') {
     return (
       <section className="py-16 bg-gradient-to-r from-blue-600 to-purple-600">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {data.stats.map((stat, index) => (
+            {stats.map((stat, index) => (
               <div key={index} className="text-center">
                 <p className="text-4xl md:text-5xl font-bold text-white mb-2">
                   {stat.value}
@@ -41,7 +42,7 @@ export function StatsSection({ data }: { data: StatsData }) {
             </h2>
           )}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
-            {data.stats.map((stat, index) => (
+            {stats.map((stat, index) => (
               <div
                 key={index}
                 className="bg-gray-50 rounded-2xl p-6 text-center hover:shadow-lg transition-shadow"
@@ -68,7 +69,7 @@ export function StatsSection({ data }: { data: StatsData }) {
           </h2>
         )}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto">
-          {data.stats.map((stat, index) => (
+          {stats.map((stat, index) => (
             <div key={index} className="text-center">
               <p className="text-4xl md:text-5xl font-bold text-white mb-2">
                 {stat.value}

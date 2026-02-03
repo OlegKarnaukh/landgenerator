@@ -27,7 +27,7 @@ export function TestimonialsSection({ data }: { data: TestimonialsData }) {
         )}
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {data.testimonials.map((testimonial, index) => (
+          {(data.testimonials || []).map((testimonial, index) => (
             <TestimonialCard key={index} testimonial={testimonial} />
           ))}
         </div>

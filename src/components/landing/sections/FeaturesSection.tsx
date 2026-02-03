@@ -32,7 +32,7 @@ export function FeaturesSection({ data }: { data: FeaturesData }) {
         )}
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {data.features.map((feature, index) => (
+          {(data.features || []).map((feature, index) => (
             <FeatureCard key={index} feature={feature} />
           ))}
         </div>

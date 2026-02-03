@@ -38,7 +38,7 @@ export function PricingSection({ data }: { data: PricingData }) {
         )}
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
-          {data.plans.map((plan, index) => (
+          {(data.plans || []).map((plan, index) => (
             <PricingCard key={index} plan={plan} />
           ))}
         </div>
@@ -83,7 +83,7 @@ function PricingCard({ plan }: { plan: Plan }) {
       </div>
 
       <ul className="space-y-4 mb-8">
-        {plan.features.map((feature, index) => (
+        {(plan.features || []).map((feature, index) => (
           <li key={index} className="flex items-start gap-3">
             <div className="mt-1">
               <Check className={`h-5 w-5 ${isHighlighted ? 'text-blue-600' : 'text-green-500'}`} />

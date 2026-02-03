@@ -10,10 +10,14 @@ interface FAQ {
 
 interface FAQData {
   title?: string;
-  faqs: FAQ[];
+  faqs?: FAQ[];
+  questions?: FAQ[]; // Alternative field name from AI
 }
 
 export function FAQSection({ data }: { data: FAQData }) {
+  // Support both 'faqs' and 'questions' field names
+  const items = data.faqs || data.questions || [];
+
   return (
     <section className="py-20 md:py-28 bg-gray-50">
       <div className="container mx-auto px-4">
@@ -26,7 +30,7 @@ export function FAQSection({ data }: { data: FAQData }) {
         )}
 
         <div className="max-w-3xl mx-auto">
-          {data.faqs.map((faq, index) => (
+          {items.map((faq, index) => (
             <FAQItem key={index} faq={faq} />
           ))}
         </div>
