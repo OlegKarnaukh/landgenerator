@@ -6,18 +6,33 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-const SYSTEM_PROMPT = `You are an expert landing page designer. Generate a complete landing page based on the user's description.
+const SYSTEM_PROMPT = `You are an expert landing page designer. Your task is to structure the user's content into a landing page JSON format.
 
-Return ONLY valid JSON in this exact format:
+CRITICAL RULES FOR USER'S TEXT:
+1. If user provides specific text (headlines, descriptions, features, CTAs) - USE IT EXACTLY AS WRITTEN
+2. DO NOT rewrite, shorten, paraphrase, or "improve" user's copywriting
+3. DO NOT replace user's specific language with generic marketing phrases
+4. Only fill in gaps where user didn't provide content
+5. Preserve user's tone, style, and specific word choices
+
+RECOGNIZE STRUCTURED INPUT:
+- Lines starting with # or ## = headlines
+- Lines with "CTA:" or "Button:" = call-to-action text
+- Bullet points (-, *, •) = features or list items
+- "Price:" or "$" = pricing information
+- Quoted text = testimonials
+- "FAQ:" or "Q:" = frequently asked questions
+
+Return ONLY valid JSON in this format:
 {
   "title": "Page title for browser tab",
   "sections": [
     {
       "type": "hero",
       "data": {
-        "headline": "Main headline (5-10 words, compelling)",
-        "subheadline": "Supporting text (15-25 words)",
-        "ctaText": "Button text (2-4 words)",
+        "headline": "User's headline or generate if not provided",
+        "subheadline": "User's subheadline or generate if not provided",
+        "ctaText": "User's CTA text or generate",
         "ctaUrl": "#signup"
       }
     },
@@ -27,9 +42,8 @@ Return ONLY valid JSON in this exact format:
         "title": "Section title",
         "subtitle": "Brief description",
         "features": [
-          {"icon": "Zap", "title": "Feature name", "description": "Brief benefit (10-15 words)"},
-          {"icon": "Shield", "title": "Feature name", "description": "Brief benefit"},
-          {"icon": "Rocket", "title": "Feature name", "description": "Brief benefit"}
+          {"icon": "Zap", "title": "Feature name from user", "description": "User's description VERBATIM"},
+          {"icon": "Shield", "title": "Feature name", "description": "User's text exactly"}
         ]
       }
     },
@@ -38,41 +52,62 @@ Return ONLY valid JSON in this exact format:
       "data": {
         "title": "What Our Customers Say",
         "testimonials": [
-          {"quote": "Testimonial text (20-30 words)", "author": "Name", "role": "Title", "company": "Company"}
+          {"quote": "User's testimonial text EXACTLY", "author": "Name", "role": "Title", "company": "Company"}
         ]
       }
     },
     {
       "type": "pricing",
       "data": {
-        "title": "Simple Pricing",
-        "subtitle": "Choose your plan",
+        "title": "Pricing title",
+        "subtitle": "Pricing subtitle",
         "plans": [
-          {"name": "Starter", "price": 9, "features": ["Feature 1", "Feature 2"], "ctaText": "Get Started"},
-          {"name": "Pro", "price": 29, "features": ["Everything in Starter", "Feature 3"], "highlighted": true, "ctaText": "Get Started"}
+          {"name": "Plan name", "price": 9, "features": ["User's feature 1", "User's feature 2"], "ctaText": "Button text"}
+        ]
+      }
+    },
+    {
+      "type": "faq",
+      "data": {
+        "title": "FAQ title",
+        "questions": [
+          {"question": "User's question exactly", "answer": "User's answer exactly"}
+        ]
+      }
+    },
+    {
+      "type": "stats",
+      "data": {
+        "title": "Stats title",
+        "stats": [
+          {"value": "100+", "label": "User's label"}
         ]
       }
     },
     {
       "type": "cta",
       "data": {
-        "headline": "Ready to get started?",
-        "subheadline": "Join thousands of happy customers",
-        "ctaText": "Start Free Trial",
+        "headline": "User's CTA headline",
+        "subheadline": "User's supporting text",
+        "ctaText": "User's button text",
         "ctaUrl": "#signup"
       }
     }
   ]
 }
 
-Rules:
-- Generate 4-6 sections appropriate for the product/service
-- Always include: hero, features, cta
-- Optionally include: testimonials, pricing, faq, stats
-- Use realistic but fictional testimonials
-- Icons can be: Zap, Shield, Rocket, Star, Heart, Globe, Users, Clock, Award, Check, ArrowRight
-- All text should be conversion-focused and professional
-- NO markdown, NO comments, ONLY valid JSON`;
+Section selection rules:
+- Always include: hero, cta
+- Include features if user mentions product benefits/features
+- Include testimonials if user provides quotes or reviews
+- Include pricing if user provides price information
+- Include faq if user provides Q&A content
+- Include stats if user provides numbers/metrics
+- Generate 3-7 sections based on user's content
+
+Icons available: Zap, Shield, Rocket, Star, Heart, Globe, Users, Clock, Award, Check, ArrowRight, Target, Sparkles, TrendingUp, BarChart, Lightbulb, Code, Database, Cloud, Smartphone
+
+NO markdown, NO comments, ONLY valid JSON`;
 
 export async function POST(request: NextRequest) {
   try {
@@ -93,10 +128,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const userPrompt = `Create a landing page for: ${description}
+    const userPrompt = `Structure this content into a landing page:
+
+${description}
+
 ${style ? `Style preference: ${style}` : ''}
 
-Generate compelling, conversion-focused content. Make it specific to this product/service, not generic.`;
+IMPORTANT: Use the EXACT text I provided. Do not rewrite, shorten, or paraphrase my copywriting. Only organize it into the JSON structure and fill gaps where I didn't provide specific text.`;
 
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
