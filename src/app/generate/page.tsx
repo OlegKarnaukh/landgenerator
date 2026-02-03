@@ -134,7 +134,7 @@ export default function GeneratePage() {
               Describe your product
             </h1>
             <p className="text-gray-400">
-              Tell us about your product or service and we'll create a landing page for you
+              Tell us about your product or service and we&apos;ll create a landing page for you
             </p>
           </div>
 

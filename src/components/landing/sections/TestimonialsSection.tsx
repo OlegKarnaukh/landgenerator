@@ -57,7 +57,7 @@ function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
       )}
 
       <p className="text-gray-700 mb-6 leading-relaxed">
-        "{testimonial.quote}"
+        &ldquo;{testimonial.quote}&rdquo;
       </p>
 
       <div className="flex items-center gap-4">
