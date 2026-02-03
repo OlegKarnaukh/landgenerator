@@ -11,106 +11,108 @@ const openai = new OpenAI({
   timeout: 55000, // 55 seconds timeout for OpenAI requests
 });
 
-const SYSTEM_PROMPT = `You are an expert landing page designer. Your task is to structure the user's content into a landing page JSON format.
+const SYSTEM_PROMPT = `You are an expert landing page designer. Create a complete, professional landing page.
 
-CRITICAL RULES FOR USER'S TEXT:
-1. If user provides specific text (headlines, descriptions, features, CTAs) - USE IT EXACTLY AS WRITTEN
-2. DO NOT rewrite, shorten, paraphrase, or "improve" user's copywriting
-3. DO NOT replace user's specific language with generic marketing phrases
-4. Only fill in gaps where user didn't provide content
-5. Preserve user's tone, style, and specific word choices
+TWO MODES OF OPERATION:
 
-RECOGNIZE STRUCTURED INPUT:
-- Lines starting with # or ## = headlines
-- Lines with "CTA:" or "Button:" = call-to-action text
-- Bullet points (-, *, •) = features or list items
-- "Price:" or "$" = pricing information
-- Quoted text = testimonials
-- "FAQ:" or "Q:" = frequently asked questions
+MODE 1 - SHORT INPUT (just a business name/description):
+When user provides a brief description like "автосервис в Твери" or "fitness app":
+- Generate FULL creative content for ALL sections
+- Create compelling headlines, features, testimonials, pricing, FAQ
+- Make content specific to that business type and location
+- ALWAYS include: hero, features (3-4 items), testimonials (2-3), pricing (2-3 plans), faq (3-4 questions), stats, cta
+- Generate realistic but fictional data
 
-Return ONLY valid JSON in this format:
+MODE 2 - DETAILED INPUT (structured copywriting):
+When user provides detailed content with specific text:
+- USE their exact text VERBATIM - do not rewrite or paraphrase
+- Recognize structured input: # headlines, bullet points, CTA:, Price:, FAQ:
+- Only fill gaps where user didn't provide content
+
+ALWAYS GENERATE 5-7 SECTIONS minimum. A proper landing page needs:
+1. hero - compelling headline and CTA
+2. features - 3-4 key benefits with icons
+3. testimonials - 2-3 customer reviews
+4. pricing - 2-3 plans (or skip if not applicable)
+5. stats - key numbers (years, clients, etc)
+6. faq - 3-4 common questions
+7. cta - final call to action
+
+Return ONLY valid JSON:
 {
-  "title": "Page title for browser tab",
+  "title": "Page title",
   "sections": [
     {
       "type": "hero",
       "data": {
-        "headline": "User's headline or generate if not provided",
-        "subheadline": "User's subheadline or generate if not provided",
-        "ctaText": "User's CTA text or generate",
-        "ctaUrl": "#signup"
+        "headline": "Compelling headline (5-10 words)",
+        "subheadline": "Supporting text (15-25 words)",
+        "ctaText": "Action button (2-4 words)",
+        "ctaUrl": "#contact"
       }
     },
     {
       "type": "features",
       "data": {
-        "title": "Section title",
+        "title": "Why Choose Us",
         "subtitle": "Brief description",
         "features": [
-          {"icon": "Zap", "title": "Feature name from user", "description": "User's description VERBATIM"},
-          {"icon": "Shield", "title": "Feature name", "description": "User's text exactly"}
-        ]
-      }
-    },
-    {
-      "type": "testimonials",
-      "data": {
-        "title": "What Our Customers Say",
-        "testimonials": [
-          {"quote": "User's testimonial text EXACTLY", "author": "Name", "role": "Title", "company": "Company"}
-        ]
-      }
-    },
-    {
-      "type": "pricing",
-      "data": {
-        "title": "Pricing title",
-        "subtitle": "Pricing subtitle",
-        "plans": [
-          {"name": "Plan name", "price": 9, "features": ["User's feature 1", "User's feature 2"], "ctaText": "Button text"}
-        ]
-      }
-    },
-    {
-      "type": "faq",
-      "data": {
-        "title": "FAQ title",
-        "questions": [
-          {"question": "User's question exactly", "answer": "User's answer exactly"}
+          {"icon": "Zap", "title": "Feature", "description": "Benefit description"},
+          {"icon": "Shield", "title": "Feature", "description": "Benefit description"},
+          {"icon": "Clock", "title": "Feature", "description": "Benefit description"}
         ]
       }
     },
     {
       "type": "stats",
       "data": {
-        "title": "Stats title",
         "stats": [
-          {"value": "100+", "label": "User's label"}
+          {"value": "10+", "label": "Years Experience"},
+          {"value": "5000+", "label": "Happy Clients"},
+          {"value": "24/7", "label": "Support"}
+        ]
+      }
+    },
+    {
+      "type": "testimonials",
+      "data": {
+        "title": "Customer Reviews",
+        "testimonials": [
+          {"quote": "Review text", "author": "Name", "role": "Role"}
+        ]
+      }
+    },
+    {
+      "type": "pricing",
+      "data": {
+        "title": "Our Services",
+        "plans": [
+          {"name": "Basic", "price": 99, "features": ["Feature 1", "Feature 2"], "ctaText": "Choose"}
+        ]
+      }
+    },
+    {
+      "type": "faq",
+      "data": {
+        "title": "FAQ",
+        "questions": [
+          {"question": "Question?", "answer": "Answer"}
         ]
       }
     },
     {
       "type": "cta",
       "data": {
-        "headline": "User's CTA headline",
-        "subheadline": "User's supporting text",
-        "ctaText": "User's button text",
-        "ctaUrl": "#signup"
+        "headline": "Ready to get started?",
+        "subheadline": "Contact us today",
+        "ctaText": "Get Started",
+        "ctaUrl": "#contact"
       }
     }
   ]
 }
 
-Section selection rules:
-- Always include: hero, cta
-- Include features if user mentions product benefits/features
-- Include testimonials if user provides quotes or reviews
-- Include pricing if user provides price information
-- Include faq if user provides Q&A content
-- Include stats if user provides numbers/metrics
-- Generate 3-7 sections based on user's content
-
-Icons available: Zap, Shield, Rocket, Star, Heart, Globe, Users, Clock, Award, Check, ArrowRight, Target, Sparkles, TrendingUp, BarChart, Lightbulb, Code, Database, Cloud, Smartphone
+Icons: Zap, Shield, Rocket, Star, Heart, Globe, Users, Clock, Award, Check, ArrowRight, Target, Sparkles, TrendingUp, BarChart, Lightbulb, Code, Database, Cloud, Smartphone, Car, Wrench, Tool
 
 NO markdown, NO comments, ONLY valid JSON`;
 
@@ -133,13 +135,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const userPrompt = `Structure this content into a landing page:
+    // Detect if input is short (creative mode) or detailed (preserve mode)
+    const isShortInput = description.length < 500 && !description.includes('\n');
+
+    const userPrompt = isShortInput
+      ? `Create a COMPLETE professional landing page for: ${description}
+
+${style ? `Style: ${style}` : ''}
+
+Generate ALL sections: hero, features (3-4), stats, testimonials (2-3), pricing OR services, faq (3-4), cta.
+Create compelling, specific content for this business. Make it feel real and professional.`
+      : `Structure this detailed content into a landing page:
 
 ${description}
 
-${style ? `Style preference: ${style}` : ''}
+${style ? `Style: ${style}` : ''}
 
-IMPORTANT: Use the EXACT text I provided. Do not rewrite, shorten, or paraphrase my copywriting. Only organize it into the JSON structure and fill gaps where I didn't provide specific text.`;
+IMPORTANT: Use my EXACT text verbatim. Do not rewrite or paraphrase. Only organize into sections and fill gaps.`;
 
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
