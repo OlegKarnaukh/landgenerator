@@ -130,12 +130,12 @@ export default function CreatePage() {
     setIsEditing(true);
 
     try {
-      const response = await fetch('/api/generate-html', {
+      const response = await fetch('/api/smart-edit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          currentHtml: html,
-          editCommand: userMessage,
+          html,
+          command: userMessage,
         }),
       });
 
@@ -146,9 +146,20 @@ export default function CreatePage() {
       }
 
       setHtml(data.html);
+
+      // Формируем информативное сообщение в зависимости от типа редактирования
+      let responseMsg = data.message || 'Готово! Изменения применены.';
+      if (data.tokensUsed === 0) {
+        responseMsg += ' (без AI, мгновенно)';
+      } else if (data.editType === 'ai_section') {
+        responseMsg += ` (отредактирована секция, ${data.tokensUsed} токенов)`;
+      } else if (data.editType === 'ai_full') {
+        responseMsg += ` (полное редактирование, ${data.tokensUsed} токенов)`;
+      }
+
       setChatMessages((prev) => [
         ...prev,
-        { role: 'assistant', content: 'Готово! Изменения применены.' },
+        { role: 'assistant', content: responseMsg },
       ]);
     } catch (err: any) {
       setChatMessages((prev) => [
