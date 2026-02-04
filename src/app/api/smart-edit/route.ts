@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     // Просто отправляем в Haiku - он дешёвый и быстрый
     const response = await anthropic.messages.create({
       model: EDIT_MODEL,
-      max_tokens: 16000,
+      max_tokens: 4096,
       messages: [
         {
           role: 'user',
