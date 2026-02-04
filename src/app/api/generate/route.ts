@@ -10,6 +10,135 @@ const openai = new OpenAI({
   timeout: 55000,
 });
 
+// Default themes by niche keywords
+const NICHE_THEMES: Record<string, any> = {
+  restaurant: {
+    preset: 'lifestyle',
+    colors: {
+      primary: '#b45309',
+      secondary: '#78350f',
+      accent: '#dc2626',
+      background: '#fffbeb',
+      surface: '#fef3c7',
+      text: '#1c1917',
+      textMuted: '#78716c'
+    },
+    fonts: { heading: 'Playfair Display', body: 'Source Sans 3' },
+    style: { borderRadius: 'lg', heroStyle: 'image' }
+  },
+  tech: {
+    preset: 'tech',
+    colors: {
+      primary: '#6366f1',
+      secondary: '#8b5cf6',
+      accent: '#f472b6',
+      background: '#0f0f23',
+      surface: '#1a1a2e',
+      text: '#f8fafc',
+      textMuted: '#94a3b8'
+    },
+    fonts: { heading: 'Space Grotesk', body: 'DM Sans' },
+    style: { borderRadius: 'xl', heroStyle: 'gradient' }
+  },
+  auto: {
+    preset: 'industrial',
+    colors: {
+      primary: '#1e40af',
+      secondary: '#1d4ed8',
+      accent: '#f97316',
+      background: '#ffffff',
+      surface: '#f1f5f9',
+      text: '#0f172a',
+      textMuted: '#64748b'
+    },
+    fonts: { heading: 'Outfit', body: 'Source Sans 3' },
+    style: { borderRadius: 'lg', heroStyle: 'image' }
+  },
+  beauty: {
+    preset: 'luxury',
+    colors: {
+      primary: '#be185d',
+      secondary: '#9d174d',
+      accent: '#f9a8d4',
+      background: '#fdf2f8',
+      surface: '#fce7f3',
+      text: '#1f2937',
+      textMuted: '#6b7280'
+    },
+    fonts: { heading: 'Cormorant Garamond', body: 'Raleway' },
+    style: { borderRadius: 'xl', heroStyle: 'image' }
+  },
+  fitness: {
+    preset: 'lifestyle',
+    colors: {
+      primary: '#15803d',
+      secondary: '#166534',
+      accent: '#facc15',
+      background: '#f0fdf4',
+      surface: '#dcfce7',
+      text: '#14532d',
+      textMuted: '#4b5563'
+    },
+    fonts: { heading: 'Archivo Black', body: 'General Sans' },
+    style: { borderRadius: 'lg', heroStyle: 'image' }
+  },
+  consulting: {
+    preset: 'corporate',
+    colors: {
+      primary: '#1e3a5f',
+      secondary: '#0c4a6e',
+      accent: '#0ea5e9',
+      background: '#f8fafc',
+      surface: '#f1f5f9',
+      text: '#0f172a',
+      textMuted: '#64748b'
+    },
+    fonts: { heading: 'Plus Jakarta Sans', body: 'Source Sans 3' },
+    style: { borderRadius: 'md', heroStyle: 'solid' }
+  },
+  medical: {
+    preset: 'medical',
+    colors: {
+      primary: '#0891b2',
+      secondary: '#0e7490',
+      accent: '#22d3ee',
+      background: '#f0fdfa',
+      surface: '#ccfbf1',
+      text: '#134e4a',
+      textMuted: '#5eead4'
+    },
+    fonts: { heading: 'Plus Jakarta Sans', body: 'DM Sans' },
+    style: { borderRadius: 'xl', heroStyle: 'solid' }
+  },
+  default: {
+    preset: 'creative',
+    colors: {
+      primary: '#7c3aed',
+      secondary: '#a855f7',
+      accent: '#f472b6',
+      background: '#faf5ff',
+      surface: '#f3e8ff',
+      text: '#1f2937',
+      textMuted: '#6b7280'
+    },
+    fonts: { heading: 'Space Grotesk', body: 'DM Sans' },
+    style: { borderRadius: 'xl', heroStyle: 'gradient' }
+  }
+};
+
+// Detect niche from description
+function detectNiche(description: string): string {
+  const lower = description.toLowerCase();
+  if (lower.includes('ресторан') || lower.includes('кафе') || lower.includes('еда') || lower.includes('кухня')) return 'restaurant';
+  if (lower.includes('tech') || lower.includes('saas') || lower.includes('it') || lower.includes('приложени') || lower.includes('софт')) return 'tech';
+  if (lower.includes('авто') || lower.includes('машин') || lower.includes('сто') || lower.includes('сервис')) return 'auto';
+  if (lower.includes('салон') || lower.includes('красот') || lower.includes('маникюр') || lower.includes('spa')) return 'beauty';
+  if (lower.includes('фитнес') || lower.includes('спорт') || lower.includes('трениров') || lower.includes('зал')) return 'fitness';
+  if (lower.includes('консалт') || lower.includes('b2b') || lower.includes('бизнес') || lower.includes('юрид')) return 'consulting';
+  if (lower.includes('медиц') || lower.includes('клиник') || lower.includes('врач') || lower.includes('здоров')) return 'medical';
+  return 'default';
+}
+
 const SYSTEM_PROMPT = `Ты — топовый маркетолог и UX-дизайнер. Создаёшь УНИКАЛЬНЫЕ продающие лендинги с богатым контентом.
 
 ═══════════════════════════════════════════════════════════════
@@ -412,20 +541,59 @@ ${style ? `Желаемый стиль: ${style}` : ''}
       );
     }
 
-    // Add IDs to sections
-    if (landing.sections && Array.isArray(landing.sections)) {
-      landing.sections = landing.sections.map((section: any, index: number) => ({
+    // Detect niche for fallback theme
+    const niche = detectNiche(description);
+    const fallbackTheme = NICHE_THEMES[niche] || NICHE_THEMES.default;
+
+    // Ensure theme exists and has all required fields
+    if (!landing.theme || !landing.theme.colors) {
+      console.log('No theme generated, using fallback for niche:', niche);
+      landing.theme = fallbackTheme;
+    } else {
+      // Merge with fallback to ensure all fields exist
+      landing.theme = {
+        ...fallbackTheme,
+        ...landing.theme,
+        colors: {
+          ...fallbackTheme.colors,
+          ...(landing.theme.colors || {})
+        },
+        fonts: {
+          ...fallbackTheme.fonts,
+          ...(landing.theme.fonts || {})
+        },
+        style: {
+          ...fallbackTheme.style,
+          ...(landing.theme.style || {})
+        }
+      };
+    }
+
+    // Validate sections
+    if (!landing.sections || !Array.isArray(landing.sections)) {
+      console.error('No sections in response');
+      return NextResponse.json(
+        { error: 'AI did not generate sections properly' },
+        { status: 500 }
+      );
+    }
+
+    // Add IDs to sections and ensure data exists
+    landing.sections = landing.sections
+      .filter((section: any) => section && section.type && section.data)
+      .map((section: any, index: number) => ({
         id: nanoid(10),
         order: index,
         ...section,
       }));
-    }
 
     // Add metadata
     landing.id = nanoid(10);
     landing.createdAt = new Date().toISOString();
     landing.tokensUsed = response.usage?.total_tokens || 0;
     landing.description = description;
+
+    console.log('Generated landing with theme:', landing.theme.preset || 'custom', 'and', landing.sections.length, 'sections');
 
     return NextResponse.json(landing);
   } catch (error: any) {
