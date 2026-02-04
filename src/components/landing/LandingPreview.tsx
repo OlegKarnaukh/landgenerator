@@ -1,10 +1,6 @@
 'use client';
 
-import React from 'react';
-import { TemplateRenderer } from '../templates/TemplateRenderer';
-import { TemplateId, detectTemplate } from '../templates/types';
-
-// Legacy imports for backwards compatibility
+import React, { useEffect } from 'react';
 import { HeroSection } from './sections/HeroSection';
 import { FeaturesSection } from './sections/FeaturesSection';
 import { TestimonialsSection } from './sections/TestimonialsSection';
@@ -45,6 +41,28 @@ class SectionErrorBoundary extends React.Component<
   }
 }
 
+// Theme interface
+interface Theme {
+  preset?: string;
+  colors?: {
+    primary?: string;
+    secondary?: string;
+    accent?: string;
+    background?: string;
+    surface?: string;
+    text?: string;
+    textMuted?: string;
+  };
+  fonts?: {
+    heading?: string;
+    body?: string;
+  };
+  style?: {
+    borderRadius?: string;
+    heroStyle?: string;
+  };
+}
+
 interface Section {
   id: string;
   type: string;
@@ -53,31 +71,63 @@ interface Section {
   variant?: string;
 }
 
-interface LandingData {
-  sections: Section[];
-  template?: TemplateId;
-  description?: string;
-  theme?: {
-    primary?: string;
-    style?: 'modern' | 'classic' | 'bold' | 'minimal';
-  };
-}
-
 interface LandingPreviewProps {
   sections: Section[];
-  template?: TemplateId;
+  theme?: Theme;
   description?: string;
-  theme?: LandingData['theme'];
-  useNewTemplates?: boolean;
+}
+
+// Generate Google Fonts URL
+function getFontsUrl(theme?: Theme): string | null {
+  if (!theme?.fonts) return null;
+
+  const fonts = [theme.fonts.heading, theme.fonts.body]
+    .filter((f): f is string => !!f && f !== 'Inter' && f !== 'Roboto')
+    .filter((f, i, arr) => arr.indexOf(f) === i)
+    .map(f => f.replace(/ /g, '+'));
+
+  if (fonts.length === 0) return null;
+
+  return `https://fonts.googleapis.com/css2?family=${fonts.join('&family=')}:wght@400;500;600;700;800&display=swap`;
+}
+
+// Generate CSS variables from theme
+function getThemeStyles(theme?: Theme): React.CSSProperties {
+  if (!theme?.colors) return {};
+
+  return {
+    '--color-primary': theme.colors.primary || '#3b82f6',
+    '--color-secondary': theme.colors.secondary || '#6366f1',
+    '--color-accent': theme.colors.accent || '#f472b6',
+    '--color-background': theme.colors.background || '#ffffff',
+    '--color-surface': theme.colors.surface || '#f9fafb',
+    '--color-text': theme.colors.text || '#111827',
+    '--color-text-muted': theme.colors.textMuted || '#6b7280',
+    '--font-heading': theme.fonts?.heading ? `'${theme.fonts.heading}', sans-serif` : 'inherit',
+    '--font-body': theme.fonts?.body ? `'${theme.fonts.body}', sans-serif` : 'inherit',
+  } as React.CSSProperties;
 }
 
 export function LandingPreview({
   sections,
-  template,
-  description,
   theme,
-  useNewTemplates = true
+  description,
 }: LandingPreviewProps) {
+  // Load custom fonts
+  useEffect(() => {
+    const fontsUrl = getFontsUrl(theme);
+    if (fontsUrl) {
+      const link = document.createElement('link');
+      link.href = fontsUrl;
+      link.rel = 'stylesheet';
+      document.head.appendChild(link);
+
+      return () => {
+        document.head.removeChild(link);
+      };
+    }
+  }, [theme]);
+
   // Guard against undefined or non-array sections
   if (!sections || !Array.isArray(sections) || sections.length === 0) {
     return (
@@ -90,35 +140,92 @@ export function LandingPreview({
     );
   }
 
-  // Use new template system if enabled
-  if (useNewTemplates) {
-    return (
-      <TemplateRenderer
-        data={{
-          sections,
-          template,
-          description
-        }}
-      />
-    );
-  }
-
-  // Legacy rendering (kept for backwards compatibility)
   const sortedSections = [...sections].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  const themeStyles = getThemeStyles(theme);
+  const bgColor = theme?.colors?.background || '#ffffff';
+  const textColor = theme?.colors?.text || '#111827';
 
   return (
-    <div className="min-h-screen bg-white">
-      {sortedSections.map((section) => (
-        <LegacySectionRenderer key={section.id} section={section} />
+    <div
+      className="min-h-screen"
+      style={{
+        ...themeStyles,
+        backgroundColor: bgColor,
+        color: textColor,
+        fontFamily: theme?.fonts?.body ? `'${theme.fonts.body}', sans-serif` : 'inherit',
+      }}
+    >
+      {/* Global theme styles */}
+      <style jsx global>{`
+        .theme-heading {
+          font-family: ${theme?.fonts?.heading ? `'${theme.fonts.heading}', sans-serif` : 'inherit'};
+        }
+        .theme-body {
+          font-family: ${theme?.fonts?.body ? `'${theme.fonts.body}', sans-serif` : 'inherit'};
+        }
+        .theme-primary {
+          color: ${theme?.colors?.primary || '#3b82f6'};
+        }
+        .theme-primary-bg {
+          background-color: ${theme?.colors?.primary || '#3b82f6'};
+        }
+        .theme-accent {
+          color: ${theme?.colors?.accent || '#f472b6'};
+        }
+        .theme-accent-bg {
+          background-color: ${theme?.colors?.accent || '#f472b6'};
+        }
+        .theme-surface {
+          background-color: ${theme?.colors?.surface || '#f9fafb'};
+        }
+        .theme-text-muted {
+          color: ${theme?.colors?.textMuted || '#6b7280'};
+        }
+
+        /* Animation classes */
+        .animate-fade-up {
+          animation: fadeUp 0.6s ease-out forwards;
+          opacity: 0;
+        }
+        .animate-fade-up-delay-1 { animation-delay: 0.1s; }
+        .animate-fade-up-delay-2 { animation-delay: 0.2s; }
+        .animate-fade-up-delay-3 { animation-delay: 0.3s; }
+        .animate-fade-up-delay-4 { animation-delay: 0.4s; }
+
+        @keyframes fadeUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
+
+      {sortedSections.map((section, index) => (
+        <SectionRenderer
+          key={section.id}
+          section={section}
+          theme={theme}
+          index={index}
+        />
       ))}
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
+      <footer
+        className="py-12"
+        style={{
+          backgroundColor: theme?.colors?.text || '#111827',
+          color: theme?.colors?.background || '#ffffff'
+        }}
+      >
         <div className="container mx-auto px-4 text-center">
-          <p className="text-gray-400">
-            © {new Date().getFullYear()} Your Company. All rights reserved.
+          <p style={{ opacity: 0.6 }}>
+            © {new Date().getFullYear()} All rights reserved.
           </p>
-          <p className="text-gray-600 text-sm mt-2">
+          <p className="text-sm mt-2" style={{ opacity: 0.4 }}>
             Made with LandGen.AI
           </p>
         </div>
@@ -127,7 +234,15 @@ export function LandingPreview({
   );
 }
 
-function LegacySectionRenderer({ section }: { section: Section }) {
+function SectionRenderer({
+  section,
+  theme,
+  index
+}: {
+  section: Section;
+  theme?: Theme;
+  index: number;
+}) {
   const { type, data, variant } = section;
 
   // Guard against missing data
@@ -139,37 +254,42 @@ function LegacySectionRenderer({ section }: { section: Section }) {
     );
   }
 
-  // Pass variant into data for sections that support it
-  const dataWithVariant = variant ? { ...data, variant } : data;
+  // Pass variant and theme into data for sections that support it
+  const enhancedData = {
+    ...data,
+    variant,
+    theme,
+    animationDelay: index * 0.1
+  };
 
   const renderSection = () => {
     switch (type) {
       case 'hero':
-        return <HeroSection data={dataWithVariant} />;
+        return <HeroSection data={enhancedData} />;
       case 'features':
-        return <FeaturesSection data={dataWithVariant} />;
+        return <FeaturesSection data={enhancedData} />;
       case 'testimonials':
-        return <TestimonialsSection data={dataWithVariant} />;
+        return <TestimonialsSection data={enhancedData} />;
       case 'pricing':
-        return <PricingSection data={dataWithVariant} />;
+        return <PricingSection data={enhancedData} />;
       case 'cta':
-        return <CTASection data={dataWithVariant} />;
+        return <CTASection data={enhancedData} />;
       case 'faq':
-        return <FAQSection data={dataWithVariant} />;
+        return <FAQSection data={enhancedData} />;
       case 'stats':
-        return <StatsSection data={dataWithVariant} />;
+        return <StatsSection data={enhancedData} />;
       case 'gallery':
-        return <GallerySection data={dataWithVariant} />;
+        return <GallerySection data={enhancedData} />;
       case 'team':
-        return <TeamSection data={dataWithVariant} />;
+        return <TeamSection data={enhancedData} />;
       case 'process':
-        return <ProcessSection data={dataWithVariant} />;
+        return <ProcessSection data={enhancedData} />;
       case 'services':
-        return <ServicesSection data={dataWithVariant} />;
+        return <ServicesSection data={enhancedData} />;
       case 'contact':
-        return <ContactSection data={dataWithVariant} />;
+        return <ContactSection data={enhancedData} />;
       case 'partners':
-        return <PartnersSection data={dataWithVariant} />;
+        return <PartnersSection data={enhancedData} />;
       default:
         return (
           <div className="py-12 bg-gray-100 text-center text-gray-500">

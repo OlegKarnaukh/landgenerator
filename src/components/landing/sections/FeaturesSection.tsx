@@ -1,5 +1,17 @@
 import * as Icons from 'lucide-react';
 
+interface Theme {
+  colors?: {
+    primary?: string;
+    secondary?: string;
+    accent?: string;
+    background?: string;
+    surface?: string;
+    text?: string;
+    textMuted?: string;
+  };
+}
+
 interface Feature {
   icon: string;
   title: string;
@@ -11,24 +23,46 @@ interface FeaturesData {
   subtitle?: string;
   features: Feature[];
   variant?: 'grid' | 'list' | 'minimal' | 'alternating' | 'centered';
+  theme?: Theme;
 }
 
 export function FeaturesSection({ data }: { data: FeaturesData }) {
   const variant = data.variant || 'grid';
   const features = data.features || [];
+  const theme = data.theme;
+  const primaryColor = theme?.colors?.primary || '#3b82f6';
+  const secondaryColor = theme?.colors?.secondary || '#8b5cf6';
+  const bgColor = theme?.colors?.background || '#ffffff';
+  const surfaceColor = theme?.colors?.surface || '#f9fafb';
+  const textColor = theme?.colors?.text || '#111827';
+  const textMutedColor = theme?.colors?.textMuted || '#6b7280';
+
+  const getBgClass = () => {
+    if (variant === 'minimal') return 'bg-gray-900';
+    return '';
+  };
 
   return (
-    <section className={`py-20 md:py-28 ${variant === 'alternating' ? 'bg-white' : variant === 'minimal' ? 'bg-gray-900' : 'bg-white'}`}>
+    <section
+      className={`py-20 md:py-28 ${getBgClass()}`}
+      style={variant !== 'minimal' ? { backgroundColor: bgColor } : {}}
+    >
       <div className="container mx-auto px-4">
         {(data.title || data.subtitle) && (
-          <div className={`text-center mb-16 ${variant === 'minimal' ? 'text-white' : ''}`}>
+          <div className="text-center mb-16 animate-fade-up">
             {data.title && (
-              <h2 className={`text-3xl md:text-4xl font-bold mb-4 ${variant === 'minimal' ? 'text-white' : 'text-gray-900'}`}>
+              <h2
+                className="text-3xl md:text-4xl font-bold mb-4 theme-heading"
+                style={{ color: variant === 'minimal' ? '#ffffff' : textColor }}
+              >
                 {data.title}
               </h2>
             )}
             {data.subtitle && (
-              <p className={`text-xl max-w-2xl mx-auto ${variant === 'minimal' ? 'text-gray-400' : 'text-gray-600'}`}>
+              <p
+                className="text-xl max-w-2xl mx-auto"
+                style={{ color: variant === 'minimal' ? '#9ca3af' : textMutedColor }}
+              >
                 {data.subtitle}
               </p>
             )}
@@ -38,7 +72,7 @@ export function FeaturesSection({ data }: { data: FeaturesData }) {
         {variant === 'list' && (
           <div className="max-w-4xl mx-auto space-y-6">
             {features.map((feature, index) => (
-              <ListFeatureCard key={index} feature={feature} index={index} />
+              <ListFeatureCard key={index} feature={feature} index={index} primaryColor={primaryColor} secondaryColor={secondaryColor} textColor={textColor} textMutedColor={textMutedColor} surfaceColor={surfaceColor} />
             ))}
           </div>
         )}
@@ -46,7 +80,7 @@ export function FeaturesSection({ data }: { data: FeaturesData }) {
         {variant === 'minimal' && (
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
             {features.map((feature, index) => (
-              <MinimalFeatureCard key={index} feature={feature} />
+              <MinimalFeatureCard key={index} feature={feature} primaryColor={primaryColor} />
             ))}
           </div>
         )}
@@ -54,7 +88,7 @@ export function FeaturesSection({ data }: { data: FeaturesData }) {
         {variant === 'alternating' && (
           <div className="max-w-5xl mx-auto space-y-24">
             {features.map((feature, index) => (
-              <AlternatingFeature key={index} feature={feature} index={index} />
+              <AlternatingFeature key={index} feature={feature} index={index} primaryColor={primaryColor} secondaryColor={secondaryColor} textColor={textColor} textMutedColor={textMutedColor} />
             ))}
           </div>
         )}
@@ -62,7 +96,7 @@ export function FeaturesSection({ data }: { data: FeaturesData }) {
         {variant === 'centered' && (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-12 max-w-5xl mx-auto">
             {features.map((feature, index) => (
-              <CenteredFeatureCard key={index} feature={feature} />
+              <CenteredFeatureCard key={index} feature={feature} primaryColor={primaryColor} secondaryColor={secondaryColor} textColor={textColor} textMutedColor={textMutedColor} />
             ))}
           </div>
         )}
@@ -70,7 +104,7 @@ export function FeaturesSection({ data }: { data: FeaturesData }) {
         {variant === 'grid' && (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {features.map((feature, index) => (
-              <GridFeatureCard key={index} feature={feature} />
+              <GridFeatureCard key={index} feature={feature} primaryColor={primaryColor} textColor={textColor} textMutedColor={textMutedColor} surfaceColor={surfaceColor} />
             ))}
           </div>
         )}
@@ -80,41 +114,60 @@ export function FeaturesSection({ data }: { data: FeaturesData }) {
 }
 
 // Grid variant (default)
-function GridFeatureCard({ feature }: { feature: Feature }) {
+function GridFeatureCard({ feature, primaryColor, textColor, textMutedColor, surfaceColor }: { feature: Feature; primaryColor: string; textColor: string; textMutedColor: string; surfaceColor: string }) {
   const IconComponent = (Icons as any)[feature.icon] || Icons.Zap;
   return (
-    <div className="group p-8 rounded-2xl bg-gray-50 hover:bg-white hover:shadow-xl transition-all duration-300 border border-transparent hover:border-gray-100">
-      <div className="w-14 h-14 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600 mb-6 group-hover:scale-110 transition-transform">
+    <div
+      className="group p-8 rounded-2xl hover:shadow-xl transition-all duration-300 border border-transparent hover:border-gray-100 animate-fade-up"
+      style={{ backgroundColor: surfaceColor }}
+    >
+      <div
+        className="w-14 h-14 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform"
+        style={{ backgroundColor: `${primaryColor}20`, color: primaryColor }}
+      >
         <IconComponent className="h-7 w-7" />
       </div>
-      <h3 className="text-xl font-semibold text-gray-900 mb-3">{feature.title}</h3>
-      <p className="text-gray-600 leading-relaxed">{feature.description}</p>
+      <h3 className="text-xl font-semibold mb-3" style={{ color: textColor }}>{feature.title}</h3>
+      <p className="leading-relaxed" style={{ color: textMutedColor }}>{feature.description}</p>
     </div>
   );
 }
 
 // List variant - horizontal cards
-function ListFeatureCard({ feature, index }: { feature: Feature; index: number }) {
+function ListFeatureCard({ feature, index, primaryColor, secondaryColor, textColor, textMutedColor, surfaceColor }: { feature: Feature; index: number; primaryColor: string; secondaryColor: string; textColor: string; textMutedColor: string; surfaceColor: string }) {
   const IconComponent = (Icons as any)[feature.icon] || Icons.Zap;
   return (
-    <div className={`flex items-start gap-6 p-6 rounded-2xl ${index % 2 === 0 ? 'bg-gray-50' : 'bg-white border border-gray-100'}`}>
-      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white flex-shrink-0">
+    <div
+      className="flex items-start gap-6 p-6 rounded-2xl animate-fade-up"
+      style={{
+        backgroundColor: index % 2 === 0 ? surfaceColor : 'transparent',
+        border: index % 2 !== 0 ? '1px solid #e5e7eb' : 'none',
+        animationDelay: `${index * 0.1}s`
+      }}
+    >
+      <div
+        className="w-16 h-16 rounded-2xl flex items-center justify-center text-white flex-shrink-0"
+        style={{ background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})` }}
+      >
         <IconComponent className="h-8 w-8" />
       </div>
       <div>
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">{feature.title}</h3>
-        <p className="text-gray-600 leading-relaxed">{feature.description}</p>
+        <h3 className="text-xl font-semibold mb-2" style={{ color: textColor }}>{feature.title}</h3>
+        <p className="leading-relaxed" style={{ color: textMutedColor }}>{feature.description}</p>
       </div>
     </div>
   );
 }
 
 // Minimal variant - dark background, simple icons
-function MinimalFeatureCard({ feature }: { feature: Feature }) {
+function MinimalFeatureCard({ feature, primaryColor }: { feature: Feature; primaryColor: string }) {
   const IconComponent = (Icons as any)[feature.icon] || Icons.Zap;
   return (
-    <div className="text-center group">
-      <div className="w-16 h-16 mx-auto rounded-full bg-white/10 flex items-center justify-center text-white mb-6 group-hover:bg-white/20 transition-colors">
+    <div className="text-center group animate-fade-up">
+      <div
+        className="w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform"
+        style={{ backgroundColor: `${primaryColor}30`, color: primaryColor }}
+      >
         <IconComponent className="h-8 w-8" />
       </div>
       <h3 className="text-lg font-semibold text-white mb-2">{feature.title}</h3>
@@ -124,36 +177,50 @@ function MinimalFeatureCard({ feature }: { feature: Feature }) {
 }
 
 // Alternating variant - left/right with large icons
-function AlternatingFeature({ feature, index }: { feature: Feature; index: number }) {
+function AlternatingFeature({ feature, index, primaryColor, secondaryColor, textColor, textMutedColor }: { feature: Feature; index: number; primaryColor: string; secondaryColor: string; textColor: string; textMutedColor: string }) {
   const IconComponent = (Icons as any)[feature.icon] || Icons.Zap;
   const isEven = index % 2 === 0;
 
   return (
-    <div className={`flex flex-col md:flex-row items-center gap-12 ${!isEven ? 'md:flex-row-reverse' : ''}`}>
+    <div
+      className={`flex flex-col md:flex-row items-center gap-12 animate-fade-up ${!isEven ? 'md:flex-row-reverse' : ''}`}
+      style={{ animationDelay: `${index * 0.15}s` }}
+    >
       <div className="flex-1">
-        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white mb-6">
+        <div
+          className="w-20 h-20 rounded-2xl flex items-center justify-center text-white mb-6"
+          style={{ background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})` }}
+        >
           <IconComponent className="h-10 w-10" />
         </div>
-        <h3 className="text-2xl font-bold text-gray-900 mb-4">{feature.title}</h3>
-        <p className="text-lg text-gray-600 leading-relaxed">{feature.description}</p>
+        <h3 className="text-2xl font-bold mb-4" style={{ color: textColor }}>{feature.title}</h3>
+        <p className="text-lg leading-relaxed" style={{ color: textMutedColor }}>{feature.description}</p>
       </div>
       <div className="flex-1">
-        <div className={`aspect-video rounded-2xl bg-gradient-to-br ${isEven ? 'from-blue-100 to-purple-100' : 'from-purple-100 to-pink-100'}`} />
+        <div
+          className="aspect-video rounded-2xl"
+          style={{
+            background: `linear-gradient(135deg, ${primaryColor}20, ${secondaryColor}20)`
+          }}
+        />
       </div>
     </div>
   );
 }
 
 // Centered variant - icons on top, centered text
-function CenteredFeatureCard({ feature }: { feature: Feature }) {
+function CenteredFeatureCard({ feature, primaryColor, secondaryColor, textColor, textMutedColor }: { feature: Feature; primaryColor: string; secondaryColor: string; textColor: string; textMutedColor: string }) {
   const IconComponent = (Icons as any)[feature.icon] || Icons.Zap;
   return (
-    <div className="text-center group">
-      <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white mb-6 group-hover:scale-110 transition-transform">
+    <div className="text-center group animate-fade-up">
+      <div
+        className="w-20 h-20 mx-auto rounded-full flex items-center justify-center text-white mb-6 group-hover:scale-110 transition-transform"
+        style={{ background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})` }}
+      >
         <IconComponent className="h-10 w-10" />
       </div>
-      <h3 className="text-xl font-bold text-gray-900 mb-3">{feature.title}</h3>
-      <p className="text-gray-600 leading-relaxed">{feature.description}</p>
+      <h3 className="text-xl font-bold mb-3" style={{ color: textColor }}>{feature.title}</h3>
+      <p className="leading-relaxed" style={{ color: textMutedColor }}>{feature.description}</p>
     </div>
   );
 }

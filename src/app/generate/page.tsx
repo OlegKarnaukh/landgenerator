@@ -6,6 +6,27 @@ import { ArrowLeft, Sparkles, Loader2, Download, Eye, RotateCcw } from 'lucide-r
 import { Button } from '@/components/ui/button';
 import { LandingPreview } from '@/components/landing/LandingPreview';
 
+interface Theme {
+  preset?: string;
+  colors?: {
+    primary?: string;
+    secondary?: string;
+    accent?: string;
+    background?: string;
+    surface?: string;
+    text?: string;
+    textMuted?: string;
+  };
+  fonts?: {
+    heading?: string;
+    body?: string;
+  };
+  style?: {
+    borderRadius?: string;
+    heroStyle?: string;
+  };
+}
+
 interface GeneratedLanding {
   id: string;
   title: string;
@@ -14,6 +35,7 @@ interface GeneratedLanding {
   tokensUsed: number;
   template?: 'saas' | 'lifestyle' | 'local' | 'corporate' | 'creative';
   description?: string;
+  theme?: Theme;
 }
 
 export default function GeneratePage() {
@@ -111,7 +133,7 @@ export default function GeneratePage() {
         <div className="pt-14">
           <LandingPreview
             sections={landing.sections}
-            template={landing.template}
+            theme={landing.theme}
             description={landing.description}
           />
         </div>

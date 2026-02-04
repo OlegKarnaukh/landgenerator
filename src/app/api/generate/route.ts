@@ -2,350 +2,350 @@ import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { nanoid } from 'nanoid';
 
-// Template detection
-type TemplateId = 'saas' | 'lifestyle' | 'local' | 'corporate' | 'creative';
-
-const TEMPLATE_KEYWORDS: Record<TemplateId, string[]> = {
-  saas: ['saas', 'it', 'tech', 'startup', 'software', 'app', 'ai', 'платформа', 'сервис', 'приложение', 'облачн', 'crm', 'erp'],
-  lifestyle: ['ресторан', 'кафе', 'салон', 'красота', 'фитнес', 'спорт', 'спа', 'отель', 'студия', 'йога', 'массаж', 'косметолог'],
-  corporate: ['консалтинг', 'агентство', 'юрист', 'бухгалтер', 'b2b', 'аудит', 'финансы', 'страхование', 'банк'],
-  creative: ['дизайн', 'маркетинг', 'реклама', 'брендинг', 'фото', 'видео', 'креатив', 'smm', 'продакшн'],
-  local: ['автосервис', 'ремонт', 'медицина', 'клиника', 'стоматолог', 'сантехник', 'электрик', 'строительство', 'шиномонтаж'],
-};
-
-function detectTemplate(description: string): TemplateId {
-  const lowerDesc = description.toLowerCase();
-
-  for (const [templateId, keywords] of Object.entries(TEMPLATE_KEYWORDS)) {
-    for (const keyword of keywords) {
-      if (lowerDesc.includes(keyword)) {
-        return templateId as TemplateId;
-      }
-    }
-  }
-
-  return 'local'; // Default
-}
-
-// Increase function timeout for long prompts (Railway/Vercel)
-export const maxDuration = 60; // 60 seconds
+export const maxDuration = 60;
 export const runtime = 'nodejs';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
-  timeout: 55000, // 55 seconds timeout for OpenAI requests
+  timeout: 55000,
 });
 
-const SYSTEM_PROMPT = `Ты — опытный маркетолог и копирайтер уровня Огилви. Создаёшь лендинги, которые ПРОДАЮТ.
+const SYSTEM_PROMPT = `Ты — топовый маркетолог и UX-дизайнер. Создаёшь УНИКАЛЬНЫЕ продающие лендинги с богатым контентом.
 
 ═══════════════════════════════════════════════════════════════
-АЛГОРИТМ ГЕНЕРАЦИИ
+⚠️ КРИТИЧЕСКИ ВАЖНО: ИЗБЕГАЙ "AI SLOP" ДИЗАЙНА
 ═══════════════════════════════════════════════════════════════
 
-Перед генерацией JSON ты ОБЯЗАН мысленно пройти эти шаги:
+❌ ЗАПРЕЩЕНО (выглядит как дешёвый AI):
+- Шрифты: Inter, Roboto, Arial, Open Sans, Lato
+- Цвета: #3B82F6 (синий), #8B5CF6 (фиолетовый), стандартные Tailwind
+- Слова: качественный, профессиональный, надёжный, индивидуальный подход
+- Мало контента: 4-5 секций, короткие тексты
 
-ШАГ 1: АНАЛИЗ НИШИ
-- Что это за бизнес/продукт?
-- Кто целевая аудитория?
-- Какие конкуренты? Чем отличаться?
-
-ШАГ 2: СЕГМЕНТ ЦА (главный)
-Опиши клиента от первого лица:
-"Я — [кто], у меня [ситуация]. Я ищу [что] потому что [причина]"
-
-ШАГ 3: БОЛИ КЛИЕНТА
-Явные (которые сам назовёт):
-- [Конкретная боль 1]
-- [Конкретная боль 2]
-
-Скрытые (о которых стесняется):
-- [Глубинная боль] → внутренний диалог: "[Фраза из головы клиента]"
-
-ШАГ 4: СТРАХИ
-Для каждого страха — конкретная фраза из головы:
-- Страх обмана → "Опять разведут на деньги, а результата не будет"
-- Страх потери времени → "Угроблю месяц на это, а толку ноль"
-- Страх осуждения → "Друзья узнают — засмеют"
-
-ШАГ 5: ЖЕЛАЕМЫЙ РЕЗУЛЬТАТ
-- Что клиент хочет получить?
-- Как хочет ЧУВСТВОВАТЬ себя после?
-- Конкретный измеримый результат
+✅ ТРЕБУЕТСЯ (выглядит как премиум агентство):
+- Уникальные шрифты под нишу
+- Уникальная цветовая палитра
+- Много контента: 8-12 секций
+- Конкретика: цифры, истории, детали
 
 ═══════════════════════════════════════════════════════════════
-ФОРМУЛЫ КОПИРАЙТИНГА
-═══════════════════════════════════════════════════════════════
-
-ЗАГОЛОВОК HERO (выбери формулу):
-
-1. БОЛЬ + РЕШЕНИЕ С ЦИФРОЙ
-   "[Конкретная боль]? [Решение с измеримым результатом]"
-   ❌ "Мало клиентов? Мы поможем"
-   ✅ "Менеджеры сливают 70% заявок? AI-ассистент закроет каждого второго"
-
-2. РЕЗУЛЬТАТ + СРОК + СНЯТИЕ БАРЬЕРА
-   "[Результат] за [срок], [снятие возражения]"
-   ❌ "Высокий доход быстро"
-   ✅ "Первые 50 000₽ на маркетплейсах за 14 дней без своего товара"
-
-3. КАК [РЕЗУЛЬТАТ] БЕЗ [СТРАХ]
-   ❌ "Как заработать без проблем"
-   ✅ "Как продавать на 30% больше без холодных звонков и выгорания"
-
-ПОДЗАГОЛОВОК:
-Конкретика: что получит + как + гарантия
-"[Метод/механизм] + [конкретный результат] + [снятие риска]"
-
-ОФФЕР (структура):
-[Действие] + [конкретный результат с цифрой]
-+ даже если [реальное ограничение клиента]
-+ с помощью [уникальный механизм]
-+ за [срок]
-+ без [чего клиент боится]
-
-CTA:
-- Основной: с конкретной выгодой ("Получить бесплатную диагностику")
-- Мягкий: без обязательств ("Узнать подробности")
-- Срочный: с ограничением ("Записаться — осталось 3 места")
-
-═══════════════════════════════════════════════════════════════
-ПРИНЦИПЫ ТЕКСТОВ
-═══════════════════════════════════════════════════════════════
-
-1. КОНКРЕТНЫЕ ФРАЗЫ, не описания:
-   ❌ "Скепсис к обучению"
-   ✅ "Опять выброшу деньги на ветер и угроблю кучу времени"
-
-2. ЦИФРЫ везде где можно:
-   ❌ "Быстрый ремонт"
-   ✅ "Замена масла — 20 минут, колодки — 40 минут"
-
-3. РЕЗУЛЬТАТ, а не процесс:
-   ❌ "Проводим диагностику"
-   ✅ "Узнаете точную причину поломки за 30 минут"
-
-4. ИСТОРИИ в отзывах:
-   ❌ "Отличный сервис, рекомендую!"
-   ✅ "Приехал с убитой подвеской, думал попаду на 50к. Нашли причину за час, заменили только сайлентблоки — отдал 8 тысяч. Теперь только к ним."
-
-5. FAQ = страхи клиента:
-   ❌ "Какие у вас часы работы?"
-   ✅ "А если в процессе найдёте ещё поломки и цена вырастет?"
-
-ЗАПРЕЩЕНО: качественный, профессиональный, надёжный, лучший, уникальный, инновационный, комплексный, индивидуальный подход
-
-═══════════════════════════════════════════════════════════════
-СЕКЦИИ И ВАРИАНТЫ — ВЫБИРАЙ РАЗНЫЕ ДЛЯ РАЗНЫХ НИШИ!
-═══════════════════════════════════════════════════════════════
-
-### hero (ОБЯЗАТЕЛЬНО)
-variant: "centered" | "image-bg" | "split" | "gradient"
-- centered: тёмный градиент (SaaS, tech)
-- image-bg: полноэкранное фото (рестораны, салоны, фитнес)
-- split: текст слева + фото справа (услуги, агентства)
-- gradient: яркий градиент (креативные, молодёжные)
-imageKeyword: auto | restaurant | beauty | fitness | tech | medical | education | realestate | consulting | photography
-
-### features — преимущества с иконками
-variant: "grid" | "list" | "minimal" | "alternating" | "centered"
-- grid: карточки в сетке 3 колонки (универсальный)
-- list: горизонтальные карточки со стрипами (B2B, сервисы)
-- minimal: тёмный фон, лаконичные иконки (tech, SaaS)
-- alternating: чередующиеся лево/право с большими иконками (агентства)
-- centered: центрированные карточки с круглыми иконками (креатив)
-
-### services — услуги с ценами
-variant: "cards" | "list" | "detailed"
-
-### process — этапы работы
-variant: "timeline" | "numbered" | "cards"
-
-### gallery — галерея работ
-variant: "grid" | "masonry"
-category: auto | beauty | restaurant | fitness | photography | realestate
-
-### team — команда
-variant: "grid" | "cards" | "compact"
-
-### testimonials — отзывы-истории
-variant: "cards" | "large" | "minimal" | "dark" | "marquee"
-- cards: карточки с аватарами в сетке (универсальный)
-- large: один большой отзыв на градиентном фоне (премиум, ключевой клиент)
-- minimal: простой текст без карточек, элегантно (luxury, минимализм)
-- dark: тёмный фон с карточками (tech, SaaS)
-- marquee: горизонтальная бегущая лента отзывов (много отзывов, динамика)
-
-### pricing — тарифы/прайс
-
-### stats — цифры и факты
-variant: "simple" | "cards" | "gradient" | "minimal" | "bordered" | "dark-cards" | "banner"
-- simple: тёмный фон, белые цифры (строго, корпоратив)
-- cards: светлые карточки (дружелюбно, B2C)
-- gradient: градиентный фон (яркий, энергичный)
-- minimal: белый фон, тонкие разделители (элегантно, luxury)
-- bordered: карточки с рамками на сером (структурно, B2B)
-- dark-cards: тёмные карточки с градиентными цифрами (tech, gaming)
-- banner: узкая полоса с цифрами в ряд (компактно, между секциями)
-
-### faq — ответы на страхи
-
-### partners — логотипы клиентов
-variant: "logos" | "cards"
-
-### contact — контакты + форма
-variant: "split" | "form" | "info"
-
-### cta — финальный призыв
-variant: "gradient" | "simple" | "dark" | "split" | "minimal" | "boxed" | "animated"
-- gradient: градиентный фон (классика, универсальный)
-- simple: синий фон (строго, B2B)
-- dark: тёмный фон с градиентной кнопкой (tech, SaaS)
-- split: текст слева + список преимуществ справа (B2B, сложные продукты)
-- minimal: белый фон, чёрная кнопка (элегантно, minimal)
-- boxed: карточка на сером фоне (выделяется, премиум)
-- animated: тёмный фон с анимированными элементами (tech, startup)
-
-═══════════════════════════════════════════════════════════════
-РЕКОМЕНДАЦИИ ПО НИШАМ — УНИКАЛЬНЫЕ КОМБИНАЦИИ!
-═══════════════════════════════════════════════════════════════
-
-**Автосервис**: hero(image-bg,auto) → services(list) → stats(gradient) → process(numbered) → testimonials(cards) → faq → contact
-**Салон красоты**: hero(image-bg,beauty) → services(cards) → gallery(masonry) → team(compact) → testimonials(minimal) → contact → cta(boxed)
-**Ресторан**: hero(image-bg,restaurant) → gallery(grid) → features(centered) → stats(banner) → testimonials(large) → contact
-**SaaS/IT**: hero(gradient) → features(minimal) → stats(dark-cards) → pricing → testimonials(dark) → faq → cta(animated)
-**Фитнес**: hero(image-bg,fitness) → stats(gradient) → services(cards) → team(cards) → gallery → pricing → cta(split)
-**Агентство**: hero(split) → features(alternating) → services(detailed) → team → partners → testimonials(marquee) → contact
-**Консалтинг**: hero(split,consulting) → features(list) → process(timeline) → stats(bordered) → testimonials(large) → pricing → cta(minimal)
-**Медицина**: hero(split,medical) → services(cards) → team(cards) → features(grid) → stats(cards) → faq → contact
-**Недвижимость**: hero(image-bg,realestate) → gallery(grid) → features(centered) → stats(minimal) → testimonials(cards) → contact → cta(boxed)
-**Образование**: hero(gradient) → features(alternating) → process(cards) → pricing → stats(gradient) → testimonials(marquee) → faq → cta(animated)
-**Стартап**: hero(gradient) → features(minimal) → stats(dark-cards) → process(timeline) → testimonials(dark) → cta(animated)
-**Luxury/Премиум**: hero(image-bg) → features(centered) → stats(minimal) → testimonials(minimal) → gallery(masonry) → cta(minimal)
-
-Выбирай 5-8 секций. Не все подряд! ОБЯЗАТЕЛЬНО указывай variant для каждой секции!
-
-═══════════════════════════════════════════════════════════════
-ЛОКАЛИЗАЦИЯ
-═══════════════════════════════════════════════════════════════
-
-Для России:
-- Валюта: ₽ (рубли)
-- Цены реалистичные для 2026 года
-- Имена русские
-- Города если указан
-
-═══════════════════════════════════════════════════════════════
-JSON ФОРМАТ
+📋 СТРУКТУРА ОТВЕТА
 ═══════════════════════════════════════════════════════════════
 
 {
-  "title": "Название — ключевые слова для SEO",
-  "sections": [
-    {
-      "type": "hero",
-      "variant": "image-bg",
-      "data": {
-        "headline": "ЗАГОЛОВОК ПО ФОРМУЛЕ — удар в боль + решение с цифрой",
-        "subheadline": "Конкретика: что получит + как + гарантия",
-        "ctaText": "Действие с выгодой",
-        "ctaUrl": "#contact",
-        "secondaryCtaText": "Узнать подробности",
-        "imageKeyword": "auto"
-      }
-    },
-    {
-      "type": "stats",
-      "variant": "gradient",
-      "data": {
-        "stats": [
-          {"value": "12", "label": "лет на рынке"},
-          {"value": "4800+", "label": "довольных клиентов"},
-          {"value": "97%", "label": "возвращаются снова"}
-        ]
-      }
-    },
-    {
-      "type": "services",
-      "variant": "list",
-      "data": {
-        "title": "Услуги и цены — без скрытых платежей",
-        "subtitle": "Цена фиксируется ДО начала работ",
-        "services": [
-          {
-            "icon": "Wrench",
-            "title": "Замена масла",
-            "description": "Замена масла + фильтр + проверка уровней. Занимает 20 минут.",
-            "price": "от 2 500 ₽"
-          }
-        ]
-      }
-    },
-    {
-      "type": "features",
-      "variant": "grid",
-      "data": {
-        "title": "Почему выбирают нас",
-        "features": [
-          {"icon": "Shield", "title": "Гарантия 2 года", "description": "На все виды работ. Случилось что-то — исправим бесплатно."}
-        ]
-      }
-    },
-    {
-      "type": "testimonials",
-      "variant": "cards",
-      "data": {
-        "title": "Истории клиентов",
-        "subtitle": "Не просто отзывы — реальные истории",
-        "testimonials": [
-          {
-            "quote": "Приехал с стуком в подвеске, думал попаду на 30-40 тысяч минимум. Мастер Сергей нашёл причину за 20 минут — оказалось, просто сайлентблок. Заменили за час, отдал 6500₽.",
-            "author": "Михаил Петров",
-            "role": "Kia Rio 2019",
-            "rating": 5
-          }
-        ]
-      }
-    },
-    {
-      "type": "faq",
-      "data": {
-        "title": "Ответы на ваши сомнения",
-        "questions": [
-          {
-            "question": "А если в процессе найдёте ещё поломки и цена вырастет?",
-            "answer": "Цена фиксируется ПОСЛЕ диагностики и ДО начала работ. Если найдём что-то ещё — сначала согласуем с вами."
-          }
-        ]
-      }
-    },
-    {
-      "type": "cta",
-      "variant": "gradient",
-      "data": {
-        "headline": "Запишитесь на бесплатную диагностику",
-        "subheadline": "Узнаете точную причину поломки за 30 минут",
-        "ctaText": "Записаться на диагностику"
-      }
-    }
-  ]
+  "title": "SEO заголовок",
+  "theme": { ... },     // УНИКАЛЬНАЯ тема
+  "sections": [ ... ]   // 8-12 секций
 }
 
-Icons: Zap, Shield, Rocket, Star, Heart, Globe, Users, Clock, Award, Check, ArrowRight, Target, Wrench, Car, Phone, MapPin, Calendar, CreditCard, ThumbsUp, Settings, Tool, Eye, Timer, Camera, Scissors, Palette, Code, Coffee, Utensils, Dumbbell, Stethoscope, GraduationCap, Briefcase, Home, Building, Truck, Package, Search, FileText, PenTool, Headphones
-
 ═══════════════════════════════════════════════════════════════
-ЧЕКЛИСТ ПЕРЕД ОТВЕТОМ
+🎨 ТЕМА (theme) — ГЕНЕРИРУЙ УНИКАЛЬНУЮ!
 ═══════════════════════════════════════════════════════════════
 
-□ Заголовок по формуле? (боль + решение С ЦИФРОЙ)
-□ Есть конкретные цифры? (сроки, проценты, суммы)
-□ Отзывы = истории? (проблема → решение → результат)
-□ FAQ = страхи клиента?
-□ Нет запрещённых слов? (качественный, профессиональный...)
-□ Цены в рублях, реалистичные для 2026?
-□ 5-8 секций, не больше?
-□ VARIANT указан для КАЖДОЙ секции? (hero, features, stats, testimonials, cta)
-□ Варианты подходят для ниши? (tech→minimal/dark, luxury→minimal, B2C→cards/gradient)
-□ Только валидный JSON?`;
+theme: {
+  "preset": "tech" | "creative" | "lifestyle" | "medical" | "industrial" | "luxury" | "startup" | "education",
+  "colors": {
+    "primary": "#HEX",      // Главный цвет (НЕ #3B82F6!)
+    "secondary": "#HEX",    // Вторичный
+    "accent": "#HEX",       // Акцент для CTA
+    "background": "#HEX",   // Фон страницы
+    "surface": "#HEX",      // Фон карточек
+    "text": "#HEX",         // Текст
+    "textMuted": "#HEX"     // Вторичный текст
+  },
+  "fonts": {
+    "heading": "Google Font",  // Space Grotesk, Clash Display, Playfair Display, Outfit, и т.д.
+    "body": "Google Font"
+  },
+  "style": {
+    "borderRadius": "none" | "sm" | "md" | "lg" | "xl" | "2xl",
+    "heroStyle": "gradient" | "image" | "mesh" | "solid"
+  }
+}
+
+ПРИМЕРЫ ТЕМ ПО НИШАМ:
+
+🍕 Ресторан/Еда:
+- colors: primary "#b45309", accent "#dc2626", background "#fffbeb"
+- fonts: heading "Playfair Display", body "Source Sans 3"
+- heroStyle: "image"
+
+💻 IT/SaaS/Tech:
+- colors: primary "#6366f1", accent "#f472b6", background "#0f0f23"
+- fonts: heading "Space Grotesk", body "DM Sans"
+- heroStyle: "mesh"
+
+🚗 Автосервис:
+- colors: primary "#1e40af", accent "#f97316", background "#ffffff"
+- fonts: heading "Outfit", body "Source Sans 3"
+- heroStyle: "image"
+
+💇 Салон красоты:
+- colors: primary "#be185d", accent "#f9a8d4", background "#fdf2f8"
+- fonts: heading "Cormorant Garamond", body "Raleway"
+- heroStyle: "image"
+
+🏋️ Фитнес:
+- colors: primary "#15803d", accent "#facc15", background "#f0fdf4"
+- fonts: heading "Cabinet Grotesk", body "General Sans"
+- heroStyle: "image"
+
+🏢 Консалтинг/B2B:
+- colors: primary "#1e3a5f", accent "#0ea5e9", background "#f8fafc"
+- fonts: heading "Plus Jakarta Sans", body "Inter"
+- heroStyle: "solid"
+
+═══════════════════════════════════════════════════════════════
+📄 СЕКЦИИ (sections) — МИНИМУМ 8!
+═══════════════════════════════════════════════════════════════
+
+### 1. hero (ОБЯЗАТЕЛЬНО)
+{
+  "type": "hero",
+  "data": {
+    "badge": "🔥 Акция до конца месяца",
+    "headline": "Боль клиента? Решение с цифрой за срок",
+    "subheadline": "Подробное описание что получит клиент (2-3 предложения)",
+    "ctaText": "Действие с выгодой",
+    "ctaUrl": "#contact",
+    "secondaryCtaText": "Узнать подробности",
+    "image": "https://images.unsplash.com/photo-XXXXX?w=1200&q=80"
+  }
+}
+
+### 2. stats — 4 цифры доверия
+{
+  "type": "stats",
+  "data": {
+    "stats": [
+      {"value": "12 847", "label": "клиентов"},
+      {"value": "98.7%", "label": "довольны результатом"},
+      {"value": "< 2 ч", "label": "среднее время ответа"},
+      {"value": "7 лет", "label": "на рынке"}
+    ]
+  }
+}
+
+### 3. features — 6 преимуществ
+{
+  "type": "features",
+  "data": {
+    "title": "Заголовок секции",
+    "subtitle": "Подзаголовок с конкретикой",
+    "features": [
+      {
+        "icon": "Shield",
+        "title": "Преимущество",
+        "description": "Подробное описание в 2-3 предложения с конкретикой и цифрами."
+      }
+      // ... ещё 5 штук
+    ]
+  }
+}
+
+### 4. services — 4-6 услуг с ценами
+{
+  "type": "services",
+  "data": {
+    "title": "Услуги и цены",
+    "subtitle": "Прозрачное ценообразование",
+    "services": [
+      {
+        "icon": "Wrench",
+        "title": "Название услуги",
+        "description": "Подробное описание что входит (2-3 предложения)",
+        "price": "от 5 000 ₽",
+        "duration": "30-60 минут",
+        "image": "https://images.unsplash.com/photo-XXXXX?w=600&q=80"
+      }
+      // ... ещё 3-5 штук
+    ]
+  }
+}
+
+### 5. process — 4-5 этапов работы
+{
+  "type": "process",
+  "data": {
+    "title": "Как мы работаем",
+    "subtitle": "Простой и понятный процесс",
+    "steps": [
+      {
+        "icon": "Phone",
+        "title": "Шаг 1: Заявка",
+        "description": "Подробное описание что происходит на этом этапе"
+      }
+      // ... ещё 3-4 шага
+    ]
+  }
+}
+
+### 6. testimonials — 4-6 отзывов-ИСТОРИЙ
+{
+  "type": "testimonials",
+  "data": {
+    "title": "Истории наших клиентов",
+    "testimonials": [
+      {
+        "quote": "Длинная история: была проблема X, обратился к вам, получил Y. Конкретные детали и цифры. Теперь рекомендую всем знакомым.",
+        "author": "Имя Фамилия",
+        "role": "Должность / Компания",
+        "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=Имя",
+        "rating": 5
+      }
+      // ... ещё 3-5 отзывов
+    ]
+  }
+}
+
+### 7. gallery — 6-8 фото работ (если применимо)
+{
+  "type": "gallery",
+  "data": {
+    "title": "Наши работы",
+    "subtitle": "Реальные проекты",
+    "images": [
+      {
+        "url": "https://images.unsplash.com/photo-XXXXX?w=600&q=80",
+        "alt": "Описание",
+        "caption": "Подпись к фото"
+      }
+      // ... ещё 5-7 фото
+    ]
+  }
+}
+
+### 8. team — 3-4 члена команды (если применимо)
+{
+  "type": "team",
+  "data": {
+    "title": "Наша команда",
+    "members": [
+      {
+        "name": "Имя Фамилия",
+        "role": "Должность",
+        "bio": "Краткая биография в 2-3 предложения с опытом и достижениями.",
+        "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=Имя"
+      }
+    ]
+  }
+}
+
+### 9. pricing — тарифы (если применимо)
+{
+  "type": "pricing",
+  "data": {
+    "title": "Тарифы",
+    "subtitle": "Выберите подходящий",
+    "plans": [
+      {
+        "name": "Базовый",
+        "price": "от 10 000 ₽",
+        "period": "/мес",
+        "description": "Для небольших проектов",
+        "features": ["Фича 1", "Фича 2", "Фича 3"],
+        "ctaText": "Выбрать",
+        "highlighted": false
+      },
+      {
+        "name": "Популярный",
+        "price": "от 25 000 ₽",
+        "period": "/мес",
+        "description": "Оптимальный выбор",
+        "features": ["Всё из Базового", "Фича 4", "Фича 5", "Фича 6"],
+        "ctaText": "Выбрать",
+        "highlighted": true
+      }
+    ]
+  }
+}
+
+### 10. faq — 5-6 ответов на СТРАХИ
+{
+  "type": "faq",
+  "data": {
+    "title": "Частые вопросы",
+    "questions": [
+      {
+        "question": "А если результат мне не понравится?",
+        "answer": "Подробный ответ, снимающий страх клиента (2-3 предложения)"
+      }
+      // Вопросы = СТРАХИ: цена, время, качество, гарантии
+    ]
+  }
+}
+
+### 11. contact — контакты с формой
+{
+  "type": "contact",
+  "data": {
+    "title": "Свяжитесь с нами",
+    "subtitle": "Ответим в течение 15 минут",
+    "phone": "+7 (999) 123-45-67",
+    "email": "info@company.ru",
+    "address": "г. Москва, ул. Примерная, д. 1",
+    "workingHours": "Пн-Пт: 9:00-20:00, Сб: 10:00-18:00"
+  }
+}
+
+### 12. cta — финальный призыв
+{
+  "type": "cta",
+  "data": {
+    "headline": "Готовы начать?",
+    "subheadline": "Оставьте заявку сегодня и получите скидку 10%",
+    "ctaText": "Получить предложение",
+    "features": ["Бесплатная консультация", "Гарантия результата", "Поддержка 24/7"]
+  }
+}
+
+═══════════════════════════════════════════════════════════════
+🖼️ ИЗОБРАЖЕНИЯ — ИСПОЛЬЗУЙ РЕАЛЬНЫЕ UNSPLASH!
+═══════════════════════════════════════════════════════════════
+
+Формат: https://images.unsplash.com/photo-[ID]?w=800&q=80
+
+Примеры ID по категориям:
+- Авто: 1486262715619-67b85e0b08d3, 1492144534655-ae79c964c9d7
+- Еда: 1504674900247-0877df9cc836, 1555396273-367ea4eb4db5
+- Красота: 1560066984-138dadb4c035, 1522337360788-8b13dee7a37e
+- Фитнес: 1534438327276-14e5300c3a48, 1571019614242-c5c5dee9f50b
+- Офис/Tech: 1497366216548-37526070297c, 1531297484001-80022131f5a1
+- Медицина: 1579684385127-1ef15d508118, 1551190822-a9333d879b1f
+
+═══════════════════════════════════════════════════════════════
+✍️ КОПИРАЙТИНГ
+═══════════════════════════════════════════════════════════════
+
+ЗАГОЛОВКИ по формулам:
+1. "[Боль]? [Решение с цифрой]"
+2. "[Результат] за [срок] без [страх]"
+3. "Как [получить X], даже если [возражение]"
+
+ОТЗЫВЫ = ИСТОРИИ:
+❌ "Отличный сервис, всем рекомендую!"
+✅ "Обратился с проблемой X, думал будет дорого. Ребята разобрались за 2 часа, цена оказалась на 40% ниже, чем у конкурентов. Уже 3 раза возвращался."
+
+FAQ = СТРАХИ клиента:
+- "А если не понравится результат?"
+- "Почему так дорого/дёшево?"
+- "Сколько времени это займёт?"
+- "Какие гарантии?"
+
+ЦЕНЫ: в рублях (₽), реалистичные для России 2026.
+
+═══════════════════════════════════════════════════════════════
+✅ ЧЕКЛИСТ
+═══════════════════════════════════════════════════════════════
+
+□ theme с УНИКАЛЬНЫМИ цветами и шрифтами (НЕ стандартные)?
+□ 8-12 секций?
+□ Все тексты ДЛИННЫЕ и КОНКРЕТНЫЕ?
+□ 4-6 отзывов-ИСТОРИЙ (не "Отличный сервис")?
+□ 5-6 FAQ про СТРАХИ клиента?
+□ Реальные Unsplash URL для картинок?
+□ Цены в ₽?
+□ JSON валидный?`;
 
 export async function POST(request: NextRequest) {
   try {
@@ -361,40 +361,26 @@ export async function POST(request: NextRequest) {
 
     if (description.length > 20000) {
       return NextResponse.json(
-        { error: 'Description too long (max 20000 characters)' },
+        { error: 'Description too long' },
         { status: 400 }
       );
     }
 
-    // Detect if input is short (creative mode) or detailed (preserve mode)
-    const isShortInput = description.length < 500 && !description.includes('\n');
-
-    const userPrompt = isShortInput
-      ? `Создай продающий лендинг для: ${description}
-
-${style ? `Стиль: ${style}` : ''}
-
-ТВОЙ АЛГОРИТМ:
-1. Определи нишу и главный сегмент ЦА
-2. Выпиши 3 главные боли этого клиента (конкретные фразы из головы)
-3. Выпиши 2 главных страха (с внутренним диалогом)
-4. Сформулируй желаемый результат
-
-ЗАТЕМ генерируй JSON:
-- Заголовок hero ПО ФОРМУЛЕ (боль + решение с цифрой)
-- Подзаголовок с конкретикой (что получит + как + гарантия)
-- Отзывы = ИСТОРИИ (проблема → решение → результат, с деталями)
-- FAQ = ответы на СТРАХИ клиента
-- Цены в ₽, реалистичные для России 2026
-
-НЕ ИСПОЛЬЗУЙ: качественный, профессиональный, надёжный, лучший, уникальный`
-      : `Структурируй этот контент в продающий лендинг:
+    const userPrompt = `Создай УНИКАЛЬНЫЙ продающий лендинг для:
 
 ${description}
 
-${style ? `Стиль: ${style}` : ''}
+${style ? `Желаемый стиль: ${style}` : ''}
 
-Используй мой текст. Усиль по формулам копирайтинга. Добавь конкретику где нужно.`;
+КРИТИЧЕСКИ ВАЖНО:
+1. Сгенерируй УНИКАЛЬНУЮ тему (цвета НЕ стандартные, шрифты НЕ Inter/Roboto)
+2. Создай 8-12 полноценных секций с ДЛИННЫМИ текстами
+3. Отзывы должны быть ИСТОРИЯМИ (не "отличный сервис")
+4. FAQ — это ответы на СТРАХИ клиента
+5. Используй реальные Unsplash URL для изображений
+6. Цены в рублях, реалистичные для России
+
+Ответь ТОЛЬКО валидным JSON.`;
 
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
@@ -402,8 +388,8 @@ ${style ? `Стиль: ${style}` : ''}
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: userPrompt },
       ],
-      temperature: 0.8,
-      max_tokens: 4000,
+      temperature: 0.9,
+      max_tokens: 8000,
       response_format: { type: 'json_object' },
     });
 
@@ -439,9 +425,6 @@ ${style ? `Стиль: ${style}` : ''}
     landing.id = nanoid(10);
     landing.createdAt = new Date().toISOString();
     landing.tokensUsed = response.usage?.total_tokens || 0;
-
-    // Auto-detect template based on description
-    landing.template = detectTemplate(description);
     landing.description = description;
 
     return NextResponse.json(landing);
@@ -449,22 +432,13 @@ ${style ? `Стиль: ${style}` : ''}
     console.error('Generation error:', error);
 
     if (error?.status === 401) {
-      return NextResponse.json(
-        { error: 'Invalid API key' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Invalid API key' }, { status: 500 });
     }
 
     if (error?.status === 429) {
-      return NextResponse.json(
-        { error: 'Rate limit exceeded. Please try again.' },
-        { status: 429 }
-      );
+      return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
     }
 
-    return NextResponse.json(
-      { error: 'Failed to generate landing page' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to generate' }, { status: 500 });
   }
 }

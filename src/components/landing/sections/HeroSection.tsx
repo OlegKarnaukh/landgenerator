@@ -1,5 +1,21 @@
 import { ArrowRight } from 'lucide-react';
 
+interface Theme {
+  colors?: {
+    primary?: string;
+    secondary?: string;
+    accent?: string;
+    background?: string;
+    surface?: string;
+    text?: string;
+    textMuted?: string;
+  };
+  fonts?: {
+    heading?: string;
+    body?: string;
+  };
+}
+
 interface HeroData {
   headline: string;
   subheadline: string;
@@ -10,6 +26,7 @@ interface HeroData {
   imageUrl?: string;
   imageKeyword?: string;
   variant?: 'centered' | 'image-bg' | 'split' | 'gradient';
+  theme?: Theme;
 }
 
 // Generate Unsplash URL from keyword
@@ -45,6 +62,10 @@ function getBackgroundImage(keyword?: string): string {
 export function HeroSection({ data }: { data: HeroData }) {
   const variant = data.variant || 'centered';
   const bgImage = data.imageUrl || getBackgroundImage(data.imageKeyword);
+  const theme = data.theme;
+  const primaryColor = theme?.colors?.primary || '#3b82f6';
+  const secondaryColor = theme?.colors?.secondary || '#8b5cf6';
+  const accentColor = theme?.colors?.accent || '#ec4899';
 
   // Variant: Image Background (full-screen photo with overlay)
   if (variant === 'image-bg') {
@@ -91,20 +112,30 @@ export function HeroSection({ data }: { data: HeroData }) {
   // Variant: Split (text left, image right)
   if (variant === 'split') {
     return (
-      <section className="bg-white">
+      <section style={{ backgroundColor: theme?.colors?.background || '#ffffff' }}>
         <div className="container mx-auto px-4 py-16 md:py-24">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
-              <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 leading-tight">
+              <h1
+                className="text-4xl md:text-5xl font-bold mb-6 leading-tight theme-heading animate-fade-up"
+                style={{ color: theme?.colors?.text || '#111827' }}
+              >
                 {data.headline}
               </h1>
-              <p className="text-xl text-gray-600 mb-8">
+              <p
+                className="text-xl mb-8 animate-fade-up animate-fade-up-delay-1"
+                style={{ color: theme?.colors?.textMuted || '#6b7280' }}
+              >
                 {data.subheadline}
               </p>
-              <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex flex-col sm:flex-row gap-4 animate-fade-up animate-fade-up-delay-2">
                 <a
                   href={data.ctaUrl || '#contact'}
-                  className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/25"
+                  className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-white rounded-xl transition-colors shadow-lg"
+                  style={{
+                    backgroundColor: primaryColor,
+                    boxShadow: `0 10px 25px -5px ${primaryColor}40`
+                  }}
                 >
                   {data.ctaText}
                   <ArrowRight className="ml-2 h-5 w-5" />
@@ -112,15 +143,24 @@ export function HeroSection({ data }: { data: HeroData }) {
                 {data.secondaryCtaText && (
                   <a
                     href={data.secondaryCtaUrl || '#'}
-                    className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-gray-700 border-2 border-gray-200 rounded-xl hover:border-gray-300 hover:bg-gray-50 transition-colors"
+                    className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold border-2 rounded-xl hover:bg-gray-50 transition-colors"
+                    style={{
+                      color: theme?.colors?.text || '#374151',
+                      borderColor: theme?.colors?.textMuted || '#e5e7eb'
+                    }}
                   >
                     {data.secondaryCtaText}
                   </a>
                 )}
               </div>
             </div>
-            <div className="relative">
-              <div className="absolute -inset-4 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl blur-2xl opacity-20" />
+            <div className="relative animate-fade-up animate-fade-up-delay-3">
+              <div
+                className="absolute -inset-4 rounded-2xl blur-2xl opacity-20"
+                style={{
+                  background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})`
+                }}
+              />
               <img
                 src={bgImage}
                 alt=""
@@ -136,7 +176,12 @@ export function HeroSection({ data }: { data: HeroData }) {
   // Variant: Gradient (colorful gradient background)
   if (variant === 'gradient') {
     return (
-      <section className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-purple-600 to-pink-500">
+      <section
+        className="relative overflow-hidden"
+        style={{
+          background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor}, ${accentColor})`
+        }}
+      >
         <div className="absolute inset-0 opacity-30">
           <div className="absolute inset-0" style={{
             backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)',
@@ -146,16 +191,19 @@ export function HeroSection({ data }: { data: HeroData }) {
 
         <div className="relative container mx-auto px-4 py-24 md:py-32">
           <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
+            <h1
+              className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight theme-heading animate-fade-up"
+            >
               {data.headline}
             </h1>
-            <p className="text-xl md:text-2xl text-white/90 mb-10 max-w-2xl mx-auto">
+            <p className="text-xl md:text-2xl text-white/90 mb-10 max-w-2xl mx-auto animate-fade-up animate-fade-up-delay-1">
               {data.subheadline}
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-up animate-fade-up-delay-2">
               <a
                 href={data.ctaUrl || '#contact'}
-                className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-purple-600 bg-white rounded-xl hover:bg-gray-100 transition-colors shadow-lg"
+                className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold bg-white rounded-xl hover:bg-gray-100 transition-colors shadow-lg"
+                style={{ color: primaryColor }}
               >
                 {data.ctaText}
                 <ArrowRight className="ml-2 h-5 w-5" />
@@ -186,24 +234,34 @@ export function HeroSection({ data }: { data: HeroData }) {
         }} />
       </div>
 
-      {/* Gradient Orbs */}
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/30 rounded-full blur-3xl" />
-      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/30 rounded-full blur-3xl" />
+      {/* Gradient Orbs - using theme colors */}
+      <div
+        className="absolute top-0 left-1/4 w-96 h-96 rounded-full blur-3xl"
+        style={{ backgroundColor: primaryColor, opacity: 0.3 }}
+      />
+      <div
+        className="absolute bottom-0 right-1/4 w-96 h-96 rounded-full blur-3xl"
+        style={{ backgroundColor: secondaryColor, opacity: 0.3 }}
+      />
 
       <div className="relative container mx-auto px-4 py-24 md:py-32">
         <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight theme-heading animate-fade-up">
             {data.headline}
           </h1>
 
-          <p className="text-xl md:text-2xl text-gray-300 mb-10 max-w-2xl mx-auto">
+          <p className="text-xl md:text-2xl text-gray-300 mb-10 max-w-2xl mx-auto animate-fade-up animate-fade-up-delay-1">
             {data.subheadline}
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-up animate-fade-up-delay-2">
             <a
               href={data.ctaUrl || '#contact'}
-              className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/25"
+              className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-white rounded-xl transition-colors shadow-lg"
+              style={{
+                backgroundColor: primaryColor,
+                boxShadow: `0 10px 25px -5px ${primaryColor}40`
+              }}
             >
               {data.ctaText}
               <ArrowRight className="ml-2 h-5 w-5" />
@@ -221,7 +279,7 @@ export function HeroSection({ data }: { data: HeroData }) {
 
           {/* Optional Image */}
           {data.imageUrl && (
-            <div className="mt-16 relative">
+            <div className="mt-16 relative animate-fade-up animate-fade-up-delay-3">
               <div className="absolute inset-0 bg-gradient-to-t from-gray-900 to-transparent z-10" />
               <img
                 src={data.imageUrl}

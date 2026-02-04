@@ -1,5 +1,17 @@
 import { ArrowRight, Check, Sparkles, Zap } from 'lucide-react';
 
+interface Theme {
+  colors?: {
+    primary?: string;
+    secondary?: string;
+    accent?: string;
+    background?: string;
+    surface?: string;
+    text?: string;
+    textMuted?: string;
+  };
+}
+
 interface CTAData {
   headline: string;
   subheadline?: string;
@@ -9,51 +21,61 @@ interface CTAData {
   secondaryCtaUrl?: string;
   features?: string[];
   variant?: 'gradient' | 'simple' | 'dark' | 'split' | 'minimal' | 'boxed' | 'animated';
+  theme?: Theme;
 }
 
 export function CTASection({ data }: { data: CTAData }) {
   const variant = data.variant || 'gradient';
+  const theme = data.theme;
+  const primaryColor = theme?.colors?.primary || '#3b82f6';
+  const secondaryColor = theme?.colors?.secondary || '#8b5cf6';
+  const accentColor = theme?.colors?.accent || '#ec4899';
 
   if (variant === 'split') {
-    return <SplitCTA data={data} />;
+    return <SplitCTA data={data} primaryColor={primaryColor} />;
   }
 
   if (variant === 'minimal') {
-    return <MinimalCTA data={data} />;
+    return <MinimalCTA data={data} primaryColor={primaryColor} theme={theme} />;
   }
 
   if (variant === 'boxed') {
-    return <BoxedCTA data={data} />;
+    return <BoxedCTA data={data} primaryColor={primaryColor} secondaryColor={secondaryColor} />;
   }
 
   if (variant === 'animated') {
-    return <AnimatedCTA data={data} />;
+    return <AnimatedCTA data={data} primaryColor={primaryColor} secondaryColor={secondaryColor} />;
   }
 
   if (variant === 'dark') {
-    return <DarkCTA data={data} />;
+    return <DarkCTA data={data} primaryColor={primaryColor} secondaryColor={secondaryColor} />;
   }
 
   if (variant === 'simple') {
-    return <SimpleCTA data={data} />;
+    return <SimpleCTA data={data} primaryColor={primaryColor} />;
   }
 
   // Gradient (default)
   return (
-    <section className="py-20 md:py-28 bg-gradient-to-r from-blue-600 to-purple-600">
+    <section
+      className="py-20 md:py-28"
+      style={{
+        background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})`
+      }}
+    >
       <div className="container mx-auto px-4">
         <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 theme-heading animate-fade-up">
             {data.headline}
           </h2>
 
           {data.subheadline && (
-            <p className="text-xl text-white/80 mb-8">
+            <p className="text-xl text-white/80 mb-8 animate-fade-up animate-fade-up-delay-1">
               {data.subheadline}
             </p>
           )}
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-up animate-fade-up-delay-2">
             <a
               href={data.ctaUrl || '#'}
               className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold bg-white text-gray-900 rounded-xl hover:bg-gray-100 transition-colors shadow-lg"
@@ -77,20 +99,21 @@ export function CTASection({ data }: { data: CTAData }) {
 }
 
 // Simple - solid color
-function SimpleCTA({ data }: { data: CTAData }) {
+function SimpleCTA({ data, primaryColor }: { data: CTAData; primaryColor: string }) {
   return (
-    <section className="py-20 md:py-28 bg-blue-600">
+    <section className="py-20 md:py-28" style={{ backgroundColor: primaryColor }}>
       <div className="container mx-auto px-4">
         <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 theme-heading animate-fade-up">
             {data.headline}
           </h2>
           {data.subheadline && (
-            <p className="text-xl text-blue-100 mb-8">{data.subheadline}</p>
+            <p className="text-xl text-white/80 mb-8 animate-fade-up animate-fade-up-delay-1">{data.subheadline}</p>
           )}
           <a
             href={data.ctaUrl || '#'}
-            className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold bg-white text-blue-600 rounded-xl hover:bg-blue-50 transition-colors shadow-lg"
+            className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold bg-white rounded-xl hover:bg-gray-50 transition-colors shadow-lg animate-fade-up animate-fade-up-delay-2"
+            style={{ color: primaryColor }}
           >
             {data.ctaText}
             <ArrowRight className="ml-2 h-5 w-5" />
@@ -102,20 +125,24 @@ function SimpleCTA({ data }: { data: CTAData }) {
 }
 
 // Dark background
-function DarkCTA({ data }: { data: CTAData }) {
+function DarkCTA({ data, primaryColor, secondaryColor }: { data: CTAData; primaryColor: string; secondaryColor: string }) {
   return (
     <section className="py-20 md:py-28 bg-gray-900">
       <div className="container mx-auto px-4">
         <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 theme-heading animate-fade-up">
             {data.headline}
           </h2>
           {data.subheadline && (
-            <p className="text-xl text-gray-400 mb-8">{data.subheadline}</p>
+            <p className="text-xl text-gray-400 mb-8 animate-fade-up animate-fade-up-delay-1">{data.subheadline}</p>
           )}
           <a
             href={data.ctaUrl || '#'}
-            className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all shadow-lg"
+            className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-white rounded-xl transition-all shadow-lg animate-fade-up animate-fade-up-delay-2"
+            style={{
+              background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})`,
+              boxShadow: `0 10px 25px -5px ${primaryColor}40`
+            }}
           >
             {data.ctaText}
             <ArrowRight className="ml-2 h-5 w-5" />
@@ -127,23 +154,24 @@ function DarkCTA({ data }: { data: CTAData }) {
 }
 
 // Split - left text, right features
-function SplitCTA({ data }: { data: CTAData }) {
+function SplitCTA({ data, primaryColor }: { data: CTAData; primaryColor: string }) {
   const features = data.features || [];
   return (
     <section className="py-20 md:py-28 bg-gradient-to-br from-gray-900 to-gray-800">
       <div className="container mx-auto px-4">
         <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center">
           <div>
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 theme-heading animate-fade-up">
               {data.headline}
             </h2>
             {data.subheadline && (
-              <p className="text-xl text-gray-400 mb-8">{data.subheadline}</p>
+              <p className="text-xl text-gray-400 mb-8 animate-fade-up animate-fade-up-delay-1">{data.subheadline}</p>
             )}
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col sm:flex-row gap-4 animate-fade-up animate-fade-up-delay-2">
               <a
                 href={data.ctaUrl || '#'}
-                className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
+                className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-white rounded-xl transition-colors"
+                style={{ backgroundColor: primaryColor }}
               >
                 {data.ctaText}
                 <ArrowRight className="ml-2 h-5 w-5" />
@@ -159,12 +187,12 @@ function SplitCTA({ data }: { data: CTAData }) {
             </div>
           </div>
           {features.length > 0 && (
-            <div className="bg-white/5 rounded-2xl p-8 border border-white/10">
+            <div className="bg-white/5 rounded-2xl p-8 border border-white/10 animate-fade-up animate-fade-up-delay-3">
               <p className="text-white/60 uppercase tracking-wider text-sm mb-6">Что вы получите</p>
               <ul className="space-y-4">
                 {features.map((feature, index) => (
                   <li key={index} className="flex items-start gap-3">
-                    <Check className="h-5 w-5 text-green-400 mt-0.5 flex-shrink-0" />
+                    <Check className="h-5 w-5 mt-0.5 flex-shrink-0" style={{ color: primaryColor }} />
                     <span className="text-white">{feature}</span>
                   </li>
                 ))}
@@ -178,20 +206,32 @@ function SplitCTA({ data }: { data: CTAData }) {
 }
 
 // Minimal - no background, clean
-function MinimalCTA({ data }: { data: CTAData }) {
+function MinimalCTA({ data, primaryColor, theme }: { data: CTAData; primaryColor: string; theme?: Theme }) {
   return (
-    <section className="py-20 md:py-28 bg-white border-t border-b border-gray-100">
+    <section
+      className="py-20 md:py-28 border-t border-b border-gray-100"
+      style={{ backgroundColor: theme?.colors?.background || '#ffffff' }}
+    >
       <div className="container mx-auto px-4">
         <div className="max-w-2xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+          <h2
+            className="text-3xl md:text-4xl font-bold mb-4 theme-heading animate-fade-up"
+            style={{ color: theme?.colors?.text || '#111827' }}
+          >
             {data.headline}
           </h2>
           {data.subheadline && (
-            <p className="text-xl text-gray-600 mb-8">{data.subheadline}</p>
+            <p
+              className="text-xl mb-8 animate-fade-up animate-fade-up-delay-1"
+              style={{ color: theme?.colors?.textMuted || '#6b7280' }}
+            >
+              {data.subheadline}
+            </p>
           )}
           <a
             href={data.ctaUrl || '#'}
-            className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-colors"
+            className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-white rounded-xl transition-colors animate-fade-up animate-fade-up-delay-2"
+            style={{ backgroundColor: primaryColor }}
           >
             {data.ctaText}
             <ArrowRight className="ml-2 h-5 w-5" />
@@ -203,13 +243,18 @@ function MinimalCTA({ data }: { data: CTAData }) {
 }
 
 // Boxed - card style
-function BoxedCTA({ data }: { data: CTAData }) {
+function BoxedCTA({ data, primaryColor, secondaryColor }: { data: CTAData; primaryColor: string; secondaryColor: string }) {
   return (
     <section className="py-20 md:py-28 bg-gray-50">
       <div className="container mx-auto px-4">
-        <div className="max-w-4xl mx-auto bg-gradient-to-br from-blue-600 to-purple-700 rounded-3xl p-12 md:p-16 text-center shadow-2xl">
+        <div
+          className="max-w-4xl mx-auto rounded-3xl p-12 md:p-16 text-center shadow-2xl animate-fade-up"
+          style={{
+            background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})`
+          }}
+        >
           <Sparkles className="h-12 w-12 text-yellow-300 mx-auto mb-6" />
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 theme-heading">
             {data.headline}
           </h2>
           {data.subheadline && (
@@ -229,30 +274,46 @@ function BoxedCTA({ data }: { data: CTAData }) {
 }
 
 // Animated - with visual effects
-function AnimatedCTA({ data }: { data: CTAData }) {
+function AnimatedCTA({ data, primaryColor, secondaryColor }: { data: CTAData; primaryColor: string; secondaryColor: string }) {
   return (
     <section className="py-20 md:py-28 bg-gray-900 relative overflow-hidden">
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" />
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '1s' }} />
+        <div
+          className="absolute -top-40 -right-40 w-80 h-80 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"
+          style={{ backgroundColor: primaryColor }}
+        />
+        <div
+          className="absolute -bottom-40 -left-40 w-80 h-80 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"
+          style={{ backgroundColor: secondaryColor, animationDelay: '1s' }}
+        />
       </div>
 
       <div className="container mx-auto px-4 relative z-10">
         <div className="max-w-3xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/20 rounded-full text-blue-400 text-sm mb-6">
+          <div
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm mb-6 animate-fade-up"
+            style={{
+              backgroundColor: `${primaryColor}30`,
+              color: primaryColor
+            }}
+          >
             <Zap className="h-4 w-4" />
             Начните прямо сейчас
           </div>
-          <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">
+          <h2 className="text-3xl md:text-5xl font-bold text-white mb-4 theme-heading animate-fade-up animate-fade-up-delay-1">
             {data.headline}
           </h2>
           {data.subheadline && (
-            <p className="text-xl text-gray-400 mb-8">{data.subheadline}</p>
+            <p className="text-xl text-gray-400 mb-8 animate-fade-up animate-fade-up-delay-2">{data.subheadline}</p>
           )}
           <a
             href={data.ctaUrl || '#'}
-            className="group inline-flex items-center justify-center px-10 py-4 text-lg font-semibold bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all shadow-lg shadow-blue-500/25"
+            className="group inline-flex items-center justify-center px-10 py-4 text-lg font-semibold text-white rounded-xl transition-all shadow-lg animate-fade-up animate-fade-up-delay-3"
+            style={{
+              background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})`,
+              boxShadow: `0 10px 25px -5px ${primaryColor}40`
+            }}
           >
             {data.ctaText}
             <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
