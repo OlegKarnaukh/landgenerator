@@ -2,6 +2,31 @@ import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { nanoid } from 'nanoid';
 
+// Template detection
+type TemplateId = 'saas' | 'lifestyle' | 'local' | 'corporate' | 'creative';
+
+const TEMPLATE_KEYWORDS: Record<TemplateId, string[]> = {
+  saas: ['saas', 'it', 'tech', 'startup', 'software', 'app', 'ai', 'платформа', 'сервис', 'приложение', 'облачн', 'crm', 'erp'],
+  lifestyle: ['ресторан', 'кафе', 'салон', 'красота', 'фитнес', 'спорт', 'спа', 'отель', 'студия', 'йога', 'массаж', 'косметолог'],
+  corporate: ['консалтинг', 'агентство', 'юрист', 'бухгалтер', 'b2b', 'аудит', 'финансы', 'страхование', 'банк'],
+  creative: ['дизайн', 'маркетинг', 'реклама', 'брендинг', 'фото', 'видео', 'креатив', 'smm', 'продакшн'],
+  local: ['автосервис', 'ремонт', 'медицина', 'клиника', 'стоматолог', 'сантехник', 'электрик', 'строительство', 'шиномонтаж'],
+};
+
+function detectTemplate(description: string): TemplateId {
+  const lowerDesc = description.toLowerCase();
+
+  for (const [templateId, keywords] of Object.entries(TEMPLATE_KEYWORDS)) {
+    for (const keyword of keywords) {
+      if (lowerDesc.includes(keyword)) {
+        return templateId as TemplateId;
+      }
+    }
+  }
+
+  return 'local'; // Default
+}
+
 // Increase function timeout for long prompts (Railway/Vercel)
 export const maxDuration = 60; // 60 seconds
 export const runtime = 'nodejs';
@@ -414,6 +439,10 @@ ${style ? `Стиль: ${style}` : ''}
     landing.id = nanoid(10);
     landing.createdAt = new Date().toISOString();
     landing.tokensUsed = response.usage?.total_tokens || 0;
+
+    // Auto-detect template based on description
+    landing.template = detectTemplate(description);
+    landing.description = description;
 
     return NextResponse.json(landing);
   } catch (error: any) {

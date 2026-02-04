@@ -1,6 +1,10 @@
 'use client';
 
 import React from 'react';
+import { TemplateRenderer } from '../templates/TemplateRenderer';
+import { TemplateId, detectTemplate } from '../templates/types';
+
+// Legacy imports for backwards compatibility
 import { HeroSection } from './sections/HeroSection';
 import { FeaturesSection } from './sections/FeaturesSection';
 import { TestimonialsSection } from './sections/TestimonialsSection';
@@ -51,6 +55,8 @@ interface Section {
 
 interface LandingData {
   sections: Section[];
+  template?: TemplateId;
+  description?: string;
   theme?: {
     primary?: string;
     style?: 'modern' | 'classic' | 'bold' | 'minimal';
@@ -59,10 +65,19 @@ interface LandingData {
 
 interface LandingPreviewProps {
   sections: Section[];
+  template?: TemplateId;
+  description?: string;
   theme?: LandingData['theme'];
+  useNewTemplates?: boolean;
 }
 
-export function LandingPreview({ sections, theme }: LandingPreviewProps) {
+export function LandingPreview({
+  sections,
+  template,
+  description,
+  theme,
+  useNewTemplates = true
+}: LandingPreviewProps) {
   // Guard against undefined or non-array sections
   if (!sections || !Array.isArray(sections) || sections.length === 0) {
     return (
@@ -75,12 +90,26 @@ export function LandingPreview({ sections, theme }: LandingPreviewProps) {
     );
   }
 
+  // Use new template system if enabled
+  if (useNewTemplates) {
+    return (
+      <TemplateRenderer
+        data={{
+          sections,
+          template,
+          description
+        }}
+      />
+    );
+  }
+
+  // Legacy rendering (kept for backwards compatibility)
   const sortedSections = [...sections].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
   return (
     <div className="min-h-screen bg-white">
       {sortedSections.map((section) => (
-        <SectionRenderer key={section.id} section={section} />
+        <LegacySectionRenderer key={section.id} section={section} />
       ))}
 
       {/* Footer */}
@@ -98,7 +127,7 @@ export function LandingPreview({ sections, theme }: LandingPreviewProps) {
   );
 }
 
-function SectionRenderer({ section }: { section: Section }) {
+function LegacySectionRenderer({ section }: { section: Section }) {
   const { type, data, variant } = section;
 
   // Guard against missing data

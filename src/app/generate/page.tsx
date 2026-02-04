@@ -12,6 +12,8 @@ interface GeneratedLanding {
   sections: any[];
   createdAt: string;
   tokensUsed: number;
+  template?: 'saas' | 'lifestyle' | 'local' | 'corporate' | 'creative';
+  description?: string;
 }
 
 export default function GeneratePage() {
@@ -107,7 +109,11 @@ export default function GeneratePage() {
 
         {/* Landing Preview */}
         <div className="pt-14">
-          <LandingPreview sections={landing.sections} />
+          <LandingPreview
+            sections={landing.sections}
+            template={landing.template}
+            description={landing.description}
+          />
         </div>
       </div>
     );
