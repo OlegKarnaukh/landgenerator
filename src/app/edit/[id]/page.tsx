@@ -127,14 +127,7 @@ export default function EditLandingPage() {
       setHtml(data.html);
       setHasChanges(true);
 
-      let responseMsg = data.message || 'Готово! Изменения применены.';
-      if (data.tokensUsed === 0) {
-        responseMsg += ' (без AI, мгновенно)';
-      } else if (data.editType === 'ai_section') {
-        responseMsg += ` (отредактирована секция, ${data.tokensUsed} токенов)`;
-      } else if (data.editType === 'ai_full') {
-        responseMsg += ` (полное редактирование, ${data.tokensUsed} токенов)`;
-      }
+      const responseMsg = `Готово! (${data.tokensUsed} токенов)`;
 
       setChatMessages((prev) => [
         ...prev,
