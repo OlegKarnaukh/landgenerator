@@ -26,6 +26,12 @@ const SYSTEM_PROMPT = `Ты — эксперт по созданию высок�
 
 ### hero (ОБЯЗАТЕЛЬНО)
 Главный экран. Заголовок = удар в боль клиента.
+variant: "centered" | "image-bg" | "split" | "gradient"
+- centered: тёмный фон с градиентом (SaaS, tech)
+- image-bg: полноэкранное фото с overlay (рестораны, отели, фото)
+- split: текст слева + фото справа (услуги, агентства)
+- gradient: яркий градиент (креативные, молодёжные)
+imageKeyword: ключевое слово для подбора фото (auto, restaurant, beauty, fitness, tech, medical, education, realestate, consulting, photography)
 
 ### features
 Преимущества/особенности. Карточки с иконками.
@@ -45,6 +51,7 @@ variant: "timeline" | "numbered" | "cards"
 Галерея фото/работ.
 Используй для: визуальных ниш (фото, дизайн, ремонт, салон красоты, ресторан)
 variant: "grid" | "masonry"
+category: ключевое слово для изображений (auto, beauty, restaurant, fitness, photography, realestate)
 
 ### team
 Команда с фото и описанием.
@@ -78,16 +85,16 @@ variant: "split" | "form" | "info"
 
 ## РЕКОМЕНДАЦИИ ПО НИШАМ
 
-**Автосервис/ремонт**: hero → services (list) → process → stats → testimonials → faq → contact
-**Фотограф/дизайнер**: hero → gallery (masonry) → services → testimonials → contact
-**Ресторан/кафе**: hero → gallery → features → testimonials → contact
-**Агентство/студия**: hero → services → team → partners → testimonials → contact
-**SaaS/приложение**: hero → features → stats → pricing → testimonials → faq → cta
-**Салон красоты**: hero → services (cards) → gallery → team (compact) → testimonials → contact
-**Консалтинг/коучинг**: hero → features → process (timeline) → testimonials → pricing → cta
-**Фитнес/йога**: hero → services → team → gallery → pricing → contact
-**Медицина/клиника**: hero → services → team (cards) → features → testimonials → faq → contact
-**Юристы/бухгалтеры**: hero → services (detailed) → process → stats → testimonials → faq → contact
+**Автосервис/ремонт**: hero(image-bg, auto) → services(list) → process → stats → testimonials → faq → contact
+**Фотограф/дизайнер**: hero(image-bg, photography) → gallery(masonry) → services → testimonials → contact
+**Ресторан/кафе**: hero(image-bg, restaurant) → gallery(grid) → features → testimonials → contact
+**Агентство/студия**: hero(split) → services → team → partners → testimonials → contact
+**SaaS/приложение**: hero(gradient) → features → stats → pricing → testimonials → faq → cta
+**Салон красоты**: hero(image-bg, beauty) → services(cards) → gallery → team(compact) → testimonials → contact
+**Консалтинг/коучинг**: hero(split, consulting) → features → process(timeline) → testimonials → pricing → cta
+**Фитнес/йога**: hero(image-bg, fitness) → services → team → gallery → pricing → contact
+**Медицина/клиника**: hero(split, medical) → services → team(cards) → features → testimonials → faq → contact
+**Юристы/бухгалтеры**: hero(centered) → services(detailed) → process → stats → testimonials → faq → contact
 
 Это РЕКОМЕНДАЦИИ. Адаптируй под конкретный запрос.
 
@@ -115,11 +122,13 @@ variant: "split" | "form" | "info"
   "sections": [
     {
       "type": "hero",
+      "variant": "image-bg",
       "data": {
         "headline": "Удар в боль клиента",
         "subheadline": "Как решаешь + обещание",
         "ctaText": "Действие",
-        "ctaUrl": "#contact"
+        "ctaUrl": "#contact",
+        "imageKeyword": "auto"
       }
     },
     {
@@ -147,6 +156,7 @@ variant: "split" | "form" | "info"
       "variant": "grid",
       "data": {
         "title": "Наши работы",
+        "category": "auto",
         "items": [
           {"title": "Проект", "description": "Описание"}
         ]
