@@ -110,7 +110,7 @@ CTA:
 ЗАПРЕЩЕНО: качественный, профессиональный, надёжный, лучший, уникальный, инновационный, комплексный, индивидуальный подход
 
 ═══════════════════════════════════════════════════════════════
-СЕКЦИИ И ВАРИАНТЫ
+СЕКЦИИ И ВАРИАНТЫ — ВЫБИРАЙ РАЗНЫЕ ДЛЯ РАЗНЫХ НИШИ!
 ═══════════════════════════════════════════════════════════════
 
 ### hero (ОБЯЗАТЕЛЬНО)
@@ -122,34 +122,82 @@ variant: "centered" | "image-bg" | "split" | "gradient"
 imageKeyword: auto | restaurant | beauty | fitness | tech | medical | education | realestate | consulting | photography
 
 ### features — преимущества с иконками
-### services — услуги с ценами (variant: "cards" | "list" | "detailed")
-### process — этапы работы (variant: "timeline" | "numbered" | "cards")
-### gallery — галерея работ (variant: "grid" | "masonry", category: auto|beauty|restaurant|fitness|photography|realestate)
-### team — команда (variant: "grid" | "cards" | "compact")
-### testimonials — отзывы-истории (variant: "cards" | "single" | "grid")
+variant: "grid" | "list" | "minimal" | "alternating" | "centered"
+- grid: карточки в сетке 3 колонки (универсальный)
+- list: горизонтальные карточки со стрипами (B2B, сервисы)
+- minimal: тёмный фон, лаконичные иконки (tech, SaaS)
+- alternating: чередующиеся лево/право с большими иконками (агентства)
+- centered: центрированные карточки с круглыми иконками (креатив)
+
+### services — услуги с ценами
+variant: "cards" | "list" | "detailed"
+
+### process — этапы работы
+variant: "timeline" | "numbered" | "cards"
+
+### gallery — галерея работ
+variant: "grid" | "masonry"
+category: auto | beauty | restaurant | fitness | photography | realestate
+
+### team — команда
+variant: "grid" | "cards" | "compact"
+
+### testimonials — отзывы-истории
+variant: "cards" | "large" | "minimal" | "dark" | "marquee"
+- cards: карточки с аватарами в сетке (универсальный)
+- large: один большой отзыв на градиентном фоне (премиум, ключевой клиент)
+- minimal: простой текст без карточек, элегантно (luxury, минимализм)
+- dark: тёмный фон с карточками (tech, SaaS)
+- marquee: горизонтальная бегущая лента отзывов (много отзывов, динамика)
+
 ### pricing — тарифы/прайс
+
 ### stats — цифры и факты
+variant: "simple" | "cards" | "gradient" | "minimal" | "bordered" | "dark-cards" | "banner"
+- simple: тёмный фон, белые цифры (строго, корпоратив)
+- cards: светлые карточки (дружелюбно, B2C)
+- gradient: градиентный фон (яркий, энергичный)
+- minimal: белый фон, тонкие разделители (элегантно, luxury)
+- bordered: карточки с рамками на сером (структурно, B2B)
+- dark-cards: тёмные карточки с градиентными цифрами (tech, gaming)
+- banner: узкая полоса с цифрами в ряд (компактно, между секциями)
+
 ### faq — ответы на страхи
-### partners — логотипы клиентов (variant: "logos" | "cards")
-### contact — контакты + форма (variant: "split" | "form" | "info")
+
+### partners — логотипы клиентов
+variant: "logos" | "cards"
+
+### contact — контакты + форма
+variant: "split" | "form" | "info"
+
 ### cta — финальный призыв
+variant: "gradient" | "simple" | "dark" | "split" | "minimal" | "boxed" | "animated"
+- gradient: градиентный фон (классика, универсальный)
+- simple: синий фон (строго, B2B)
+- dark: тёмный фон с градиентной кнопкой (tech, SaaS)
+- split: текст слева + список преимуществ справа (B2B, сложные продукты)
+- minimal: белый фон, чёрная кнопка (элегантно, minimal)
+- boxed: карточка на сером фоне (выделяется, премиум)
+- animated: тёмный фон с анимированными элементами (tech, startup)
 
 ═══════════════════════════════════════════════════════════════
-РЕКОМЕНДАЦИИ ПО НИШАМ
+РЕКОМЕНДАЦИИ ПО НИШАМ — УНИКАЛЬНЫЕ КОМБИНАЦИИ!
 ═══════════════════════════════════════════════════════════════
 
-**Автосервис**: hero(image-bg,auto) → services(list) → process(numbered) → stats → testimonials → faq → contact
-**Салон красоты**: hero(image-bg,beauty) → services(cards) → gallery(masonry) → team(compact) → testimonials → contact
-**Ресторан**: hero(image-bg,restaurant) → gallery(grid) → features → testimonials → contact
-**SaaS/IT**: hero(gradient) → features → stats → pricing → testimonials → faq → cta
-**Фитнес**: hero(image-bg,fitness) → services → team(cards) → gallery → pricing → contact
-**Агентство**: hero(split) → services(detailed) → team → partners → testimonials → contact
-**Консалтинг**: hero(split,consulting) → features → process(timeline) → testimonials → pricing → cta
-**Медицина**: hero(split,medical) → services → team(cards) → features → faq → contact
-**Недвижимость**: hero(image-bg,realestate) → gallery(grid) → features → testimonials → contact → cta
-**Образование**: hero(gradient) → features → process → pricing → testimonials → faq → cta
+**Автосервис**: hero(image-bg,auto) → services(list) → stats(gradient) → process(numbered) → testimonials(cards) → faq → contact
+**Салон красоты**: hero(image-bg,beauty) → services(cards) → gallery(masonry) → team(compact) → testimonials(minimal) → contact → cta(boxed)
+**Ресторан**: hero(image-bg,restaurant) → gallery(grid) → features(centered) → stats(banner) → testimonials(large) → contact
+**SaaS/IT**: hero(gradient) → features(minimal) → stats(dark-cards) → pricing → testimonials(dark) → faq → cta(animated)
+**Фитнес**: hero(image-bg,fitness) → stats(gradient) → services(cards) → team(cards) → gallery → pricing → cta(split)
+**Агентство**: hero(split) → features(alternating) → services(detailed) → team → partners → testimonials(marquee) → contact
+**Консалтинг**: hero(split,consulting) → features(list) → process(timeline) → stats(bordered) → testimonials(large) → pricing → cta(minimal)
+**Медицина**: hero(split,medical) → services(cards) → team(cards) → features(grid) → stats(cards) → faq → contact
+**Недвижимость**: hero(image-bg,realestate) → gallery(grid) → features(centered) → stats(minimal) → testimonials(cards) → contact → cta(boxed)
+**Образование**: hero(gradient) → features(alternating) → process(cards) → pricing → stats(gradient) → testimonials(marquee) → faq → cta(animated)
+**Стартап**: hero(gradient) → features(minimal) → stats(dark-cards) → process(timeline) → testimonials(dark) → cta(animated)
+**Luxury/Премиум**: hero(image-bg) → features(centered) → stats(minimal) → testimonials(minimal) → gallery(masonry) → cta(minimal)
 
-Выбирай 5-8 секций. Не все подряд!
+Выбирай 5-8 секций. Не все подряд! ОБЯЗАТЕЛЬНО указывай variant для каждой секции!
 
 ═══════════════════════════════════════════════════════════════
 ЛОКАЛИЗАЦИЯ
@@ -182,6 +230,7 @@ JSON ФОРМАТ
     },
     {
       "type": "stats",
+      "variant": "gradient",
       "data": {
         "stats": [
           {"value": "12", "label": "лет на рынке"},
@@ -207,17 +256,12 @@ JSON ФОРМАТ
       }
     },
     {
-      "type": "process",
-      "variant": "numbered",
+      "type": "features",
+      "variant": "grid",
       "data": {
-        "title": "Как мы работаем",
-        "subtitle": "Прозрачно на каждом этапе",
-        "steps": [
-          {
-            "icon": "Phone",
-            "title": "Звоните или пишите",
-            "description": "Опишите проблему — подскажем примерную стоимость за 2 минуты"
-          }
+        "title": "Почему выбирают нас",
+        "features": [
+          {"icon": "Shield", "title": "Гарантия 2 года", "description": "На все виды работ. Случилось что-то — исправим бесплатно."}
         ]
       }
     },
@@ -229,9 +273,10 @@ JSON ФОРМАТ
         "subtitle": "Не просто отзывы — реальные истории",
         "testimonials": [
           {
-            "quote": "Приехал с стуком в подвеске, думал попаду на 30-40 тысяч минимум. Мастер Сергей нашёл причину за 20 минут — оказалось, просто сайлентблок. Заменили за час, отдал 6500₽. В другом сервисе мне насчитали бы замену всей подвески.",
+            "quote": "Приехал с стуком в подвеске, думал попаду на 30-40 тысяч минимум. Мастер Сергей нашёл причину за 20 минут — оказалось, просто сайлентблок. Заменили за час, отдал 6500₽.",
             "author": "Михаил Петров",
-            "role": "Kia Rio 2019"
+            "role": "Kia Rio 2019",
+            "rating": 5
           }
         ]
       }
@@ -243,21 +288,18 @@ JSON ФОРМАТ
         "questions": [
           {
             "question": "А если в процессе найдёте ещё поломки и цена вырастет?",
-            "answer": "Цена фиксируется ПОСЛЕ диагностики и ДО начала работ. Если найдём что-то ещё — сначала согласуем с вами. Никаких сюрпризов в чеке."
+            "answer": "Цена фиксируется ПОСЛЕ диагностики и ДО начала работ. Если найдём что-то ещё — сначала согласуем с вами."
           }
         ]
       }
     },
     {
-      "type": "contact",
-      "variant": "split",
+      "type": "cta",
+      "variant": "gradient",
       "data": {
-        "title": "Запишитесь на диагностику",
-        "subtitle": "Бесплатная диагностика при заказе ремонта",
-        "phone": "+7 (4822) 55-55-55",
-        "email": "info@autoservice.ru",
-        "address": "Тверь, ул. Примерная, 123",
-        "workingHours": "Пн-Вс: 8:00-21:00"
+        "headline": "Запишитесь на бесплатную диагностику",
+        "subheadline": "Узнаете точную причину поломки за 30 минут",
+        "ctaText": "Записаться на диагностику"
       }
     }
   ]
@@ -276,6 +318,8 @@ Icons: Zap, Shield, Rocket, Star, Heart, Globe, Users, Clock, Award, Check, Arro
 □ Нет запрещённых слов? (качественный, профессиональный...)
 □ Цены в рублях, реалистичные для 2026?
 □ 5-8 секций, не больше?
+□ VARIANT указан для КАЖДОЙ секции? (hero, features, stats, testimonials, cta)
+□ Варианты подходят для ниши? (tech→minimal/dark, luxury→minimal, B2C→cards/gradient)
 □ Только валидный JSON?`;
 
 export async function POST(request: NextRequest) {
