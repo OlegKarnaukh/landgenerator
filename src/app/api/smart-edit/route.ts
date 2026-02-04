@@ -7,8 +7,8 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-// Используем Haiku - он в ~10 раз дешевле Sonnet
-const EDIT_MODEL = 'claude-3-haiku-20240307';
+// Используем Sonnet для правок - достаточно токенов для больших страниц
+const EDIT_MODEL = 'claude-sonnet-4-20250514';
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     // Просто отправляем в Haiku - он дешёвый и быстрый
     const response = await anthropic.messages.create({
       model: EDIT_MODEL,
-      max_tokens: 4096,
+      max_tokens: 16000,
       messages: [
         {
           role: 'user',
