@@ -8,7 +8,7 @@ const anthropic = new Anthropic({
 });
 
 // Используем Haiku - он в ~10 раз дешевле Sonnet
-const EDIT_MODEL = 'claude-3-5-haiku-20241022';
+const EDIT_MODEL = 'claude-3-haiku-20240307';
 
 export async function POST(request: NextRequest) {
   try {
