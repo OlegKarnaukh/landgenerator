@@ -413,35 +413,29 @@ export default function CreatePage() {
 
         {/* Code modal overlay */}
         {showCode && (
-          <div
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80"
-            onClick={() => setShowCode(false)}
-          >
-            <div
-              className="bg-gray-900 rounded-lg w-[90%] max-w-4xl h-[80vh] flex flex-col shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700 bg-gray-800 rounded-t-lg">
-                <span className="text-white font-medium">HTML код</span>
-                <div className="flex items-center gap-2">
-                  <Button size="sm" variant="ghost" onClick={handleCopyCode} className="text-gray-300 hover:text-white hover:bg-gray-700">
-                    {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                    <span className="ml-2">{copied ? 'Скопировано' : 'Копировать'}</span>
-                  </Button>
-                  <button
-                    onClick={() => setShowCode(false)}
-                    className="text-gray-400 hover:text-white p-1"
-                  >
-                    <X className="h-5 w-5" />
-                  </button>
-                </div>
-              </div>
-              <div className="flex-1 overflow-auto p-4 bg-gray-900">
-                <pre className="text-sm text-green-400 font-mono whitespace-pre-wrap break-all select-all">
-                  {html}
-                </pre>
+          <div className="fixed inset-0 z-[9999] bg-black/90 flex flex-col">
+            <div className="flex items-center justify-between px-6 py-4 bg-gray-900 border-b border-gray-700">
+              <span className="text-white font-medium text-lg">HTML код</span>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleCopyCode}
+                  className="px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600"
+                >
+                  {copied ? 'Скопировано!' : 'Копировать'}
+                </button>
+                <button
+                  onClick={() => setShowCode(false)}
+                  className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-500"
+                >
+                  Закрыть
+                </button>
               </div>
             </div>
+            <textarea
+              readOnly
+              value={html}
+              className="flex-1 w-full p-4 bg-gray-950 text-green-400 font-mono text-sm resize-none focus:outline-none"
+            />
           </div>
         )}
       </div>
