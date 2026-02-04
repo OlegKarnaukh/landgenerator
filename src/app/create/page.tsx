@@ -147,15 +147,8 @@ export default function CreatePage() {
 
       setHtml(data.html);
 
-      // Формируем информативное сообщение в зависимости от типа редактирования
-      let responseMsg = data.message || 'Готово! Изменения применены.';
-      if (data.tokensUsed === 0) {
-        responseMsg += ' (без AI, мгновенно)';
-      } else if (data.editType === 'ai_section') {
-        responseMsg += ` (отредактирована секция, ${data.tokensUsed} токенов)`;
-      } else if (data.editType === 'ai_full') {
-        responseMsg += ` (полное редактирование, ${data.tokensUsed} токенов)`;
-      }
+      // Простое сообщение
+      const responseMsg = `Готово! (${data.tokensUsed} токенов)`;
 
       setChatMessages((prev) => [
         ...prev,

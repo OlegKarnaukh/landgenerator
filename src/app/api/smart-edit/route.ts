@@ -1,19 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
-import {
-  classifyEditCommand,
-  applyLocalTextEdit,
-  applyLocalStyleEdit,
-  extractSection,
-  replaceSection,
-  EditResult,
-} from '@/lib/smart-edit';
 
 export const maxDuration = 60;
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
+
+// Используем Haiku - он в ~10 раз дешевле Sonnet
+const EDIT_MODEL = 'claude-3-5-haiku-20241022';
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,209 +21,71 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Классифицируем команду
-    const classification = classifyEditCommand(command);
-    console.log('Edit classification:', classification);
+    console.log('Edit command:', command);
 
-    let result: EditResult;
-
-    switch (classification.type) {
-      case 'local_text':
-        // Локальная замена текста (0 токенов)
-        if (classification.details.pattern && classification.details.replacement) {
-          result = applyLocalTextEdit(
-            html,
-            classification.details.pattern,
-            classification.details.replacement
-          );
-
-          if (result.success) {
-            return NextResponse.json({
-              html: result.html,
-              tokensUsed: 0,
-              editType: 'local_text',
-              message: result.message,
-            });
-          }
-        }
-        // Если локально не получилось - пробуем AI
-        break;
-
-      case 'local_style':
-        // Локальное изменение стилей (0 токенов)
-        result = applyLocalStyleEdit(html, classification.details);
-
-        if (result.success) {
-          return NextResponse.json({
-            html: result.html,
-            tokensUsed: 0,
-            editType: 'local_style',
-            message: result.message,
-          });
-        }
-        // Если локально не получилось - пробуем AI
-        break;
-
-      case 'ai_section':
-        // AI редактирование только секции (меньше токенов)
-        if (classification.details.sectionKeyword) {
-          const sectionData = extractSection(html, classification.details.sectionKeyword);
-
-          if (sectionData) {
-            const editedSection = await editSectionWithAI(
-              sectionData.section,
-              command
-            );
-
-            if (editedSection.success) {
-              const newHtml = replaceSection(
-                html,
-                sectionData.startIndex,
-                sectionData.endIndex,
-                editedSection.html
-              );
-
-              return NextResponse.json({
-                html: newHtml,
-                tokensUsed: editedSection.tokensUsed,
-                editType: 'ai_section',
-                message: 'Секция отредактирована',
-              });
-            }
-          }
-        }
-        // Если секцию не нашли - полное редактирование
-        break;
-    }
-
-    // Fallback: полное AI редактирование
-    const fullEditResult = await editFullHtmlWithAI(html, command);
-
-    return NextResponse.json({
-      html: fullEditResult.html,
-      tokensUsed: fullEditResult.tokensUsed,
-      editType: 'ai_full',
-      message: 'Изменения применены',
-    });
-  } catch (error: any) {
-    console.error('Smart edit error:', error);
-    return NextResponse.json(
-      { error: error.message || 'Ошибка редактирования' },
-      { status: 500 }
-    );
-  }
-}
-
-/**
- * Редактирование только одной секции через AI
- */
-async function editSectionWithAI(
-  sectionHtml: string,
-  command: string
-): Promise<{ success: boolean; html: string; tokensUsed: number }> {
-  try {
+    // Просто отправляем в Haiku - он дешёвый и быстрый
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 4000,
+      model: EDIT_MODEL,
+      max_tokens: 16000,
       messages: [
         {
           role: 'user',
-          content: `Отредактируй эту HTML-секцию согласно запросу.
+          content: `Отредактируй HTML-лендинг согласно запросу пользователя.
 
-СЕКЦИЯ:
-${sectionHtml}
+ТЕКУЩИЙ HTML:
+${html}
 
-ЗАПРОС: ${command}
+ЗАПРОС ПОЛЬЗОВАТЕЛЯ: ${command}
 
-Правила:
-- Выведи ТОЛЬКО отредактированную секцию
-- Сохрани структуру и стили
-- Не добавляй markdown или объяснения
-- Начни сразу с <section`,
+ВАЖНЫЕ ПРАВИЛА:
+1. Выведи ПОЛНЫЙ HTML документ с изменениями
+2. Сохрани ВСЁ что не нужно менять - структуру, стили, скрипты
+3. Измени ТОЛЬКО то, что просит пользователь
+4. НЕ добавляй markdown, комментарии или объяснения
+5. Начни СРАЗУ с <!DOCTYPE html>
+6. Закончи тегом </html>`,
         },
       ],
     });
 
-    let html = '';
+    let newHtml = '';
     for (const block of response.content) {
       if (block.type === 'text') {
-        html += block.text;
+        newHtml += block.text;
       }
     }
 
-    // Очистка
-    html = html.trim();
-    if (html.startsWith('```')) {
-      html = html.replace(/^```html?\n?/, '').replace(/\n?```$/, '');
+    // Очистка от возможного markdown
+    newHtml = newHtml.trim();
+    if (newHtml.startsWith('```')) {
+      newHtml = newHtml.replace(/^```html?\n?/, '').replace(/\n?```$/, '');
+    }
+
+    // Находим начало HTML
+    const doctypeIndex = newHtml.toLowerCase().indexOf('<!doctype');
+    const htmlIndex = newHtml.toLowerCase().indexOf('<html');
+    if (doctypeIndex !== -1) {
+      newHtml = newHtml.substring(doctypeIndex);
+    } else if (htmlIndex !== -1) {
+      newHtml = newHtml.substring(htmlIndex);
     }
 
     const tokensUsed =
       (response.usage?.input_tokens || 0) + (response.usage?.output_tokens || 0);
 
-    return {
-      success: html.includes('<section'),
-      html,
+    console.log(`Edit completed: ${tokensUsed} tokens (Haiku)`);
+
+    return NextResponse.json({
+      html: newHtml,
       tokensUsed,
-    };
-  } catch (error) {
-    console.error('AI section edit error:', error);
-    return { success: false, html: sectionHtml, tokensUsed: 0 };
+      editType: 'haiku',
+      message: 'Изменения применены',
+    });
+  } catch (error: any) {
+    console.error('Edit error:', error);
+    return NextResponse.json(
+      { error: error.message || 'Ошибка редактирования' },
+      { status: 500 }
+    );
   }
-}
-
-/**
- * Полное редактирование HTML через AI (дорого)
- */
-async function editFullHtmlWithAI(
-  html: string,
-  command: string
-): Promise<{ html: string; tokensUsed: number }> {
-  const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
-    max_tokens: 16000,
-    messages: [
-      {
-        role: 'user',
-        content: `Отредактируй этот HTML-лендинг согласно запросу.
-
-HTML:
-${html}
-
-ЗАПРОС: ${command}
-
-Правила:
-- Выведи ПОЛНЫЙ отредактированный HTML
-- Сохрани всё что не нужно менять
-- Не добавляй markdown или объяснения
-- Начни сразу с <!DOCTYPE html>`,
-      },
-    ],
-  });
-
-  let newHtml = '';
-  for (const block of response.content) {
-    if (block.type === 'text') {
-      newHtml += block.text;
-    }
-  }
-
-  // Очистка
-  newHtml = newHtml.trim();
-  if (newHtml.startsWith('```')) {
-    newHtml = newHtml.replace(/^```html?\n?/, '').replace(/\n?```$/, '');
-  }
-
-  // Находим начало HTML
-  const doctypeIndex = newHtml.toLowerCase().indexOf('<!doctype');
-  const htmlIndex = newHtml.toLowerCase().indexOf('<html');
-  if (doctypeIndex !== -1) {
-    newHtml = newHtml.substring(doctypeIndex);
-  } else if (htmlIndex !== -1) {
-    newHtml = newHtml.substring(htmlIndex);
-  }
-
-  const tokensUsed =
-    (response.usage?.input_tokens || 0) + (response.usage?.output_tokens || 0);
-
-  return { html: newHtml, tokensUsed };
 }
