@@ -23,26 +23,36 @@ export interface EditResult {
   message?: string;
 }
 
-// Цвета Tailwind
+// Цвета Tailwind (разные формы слов)
 const TAILWIND_COLORS: Record<string, string> = {
-  'красн': 'red',
-  'красный': 'red',
-  'синий': 'blue',
-  'синего': 'blue',
-  'синим': 'blue',
-  'зелен': 'green',
-  'зеленый': 'green',
-  'желт': 'yellow',
-  'оранж': 'orange',
-  'фиолет': 'purple',
-  'розов': 'pink',
-  'сер': 'gray',
-  'серый': 'gray',
-  'черн': 'black',
-  'бел': 'white',
-  'голуб': 'sky',
-  'бирюз': 'teal',
-  'изумруд': 'emerald',
+  // Красный
+  'красн': 'red', 'красный': 'red', 'красные': 'red', 'красным': 'red', 'красного': 'red',
+  // Синий
+  'синий': 'blue', 'синие': 'blue', 'синего': 'blue', 'синим': 'blue', 'синими': 'blue', 'синюю': 'blue',
+  // Зеленый
+  'зелен': 'green', 'зеленый': 'green', 'зеленые': 'green', 'зеленым': 'green',
+  // Желтый
+  'желт': 'yellow', 'желтый': 'yellow', 'желтые': 'yellow',
+  // Оранжевый
+  'оранж': 'orange', 'оранжевый': 'orange', 'оранжевые': 'orange', 'оранжевым': 'orange',
+  // Фиолетовый
+  'фиолет': 'purple', 'фиолетовый': 'purple', 'фиолетовые': 'purple',
+  // Розовый
+  'розов': 'pink', 'розовый': 'pink', 'розовые': 'pink',
+  // Серый
+  'сер': 'gray', 'серый': 'gray', 'серые': 'gray',
+  // Черный
+  'черн': 'black', 'черный': 'black', 'черные': 'black',
+  // Белый
+  'бел': 'white', 'белый': 'white', 'белые': 'white',
+  // Голубой
+  'голуб': 'sky', 'голубой': 'sky', 'голубые': 'sky',
+  // Бирюзовый
+  'бирюз': 'teal', 'бирюзовый': 'teal',
+  // Изумрудный
+  'изумруд': 'emerald', 'изумрудный': 'emerald',
+  // Индиго
+  'индиго': 'indigo',
 };
 
 // Паттерны для классификации команд
@@ -55,9 +65,12 @@ const PATTERNS = {
   email: /(?:email|почт[ау]|e-mail)[\s:]+([^\s]+@[^\s]+)/i,
   address: /(?:адрес)[\s:]+(.+)$/i,
 
-  // Изменение цвета
-  colorChange: /(?:цвет|сделай|покрас)\w*\s+(?:кноп\w*|фон\w*|текст\w*)?\s*(?:в\s+)?(\w+)/i,
-  buttonColor: /кноп\w*\s+(\w+)/i,
+  // Изменение цвета кнопок - разные формы:
+  // "поменяй цвет кнопки на синий", "сделай кнопки синими", "кнопки синие"
+  buttonColorToNew: /кноп\w*\s+(?:на\s+)?(\w+)/i,
+  buttonColorChange: /(?:цвет|покрас)\w*\s+(?:\w+\s+)?кноп\w*\s+(?:на\s+)?(\w+)/i,
+  makeButtonsColor: /(?:сделай|измени|поменяй)\w*\s+(?:\w+\s+)?кноп\w*\s+(?:\w+\s+)?(?:на\s+)?(\w+)/i,
+  colorButtons: /(\w+)\s+кноп/i,  // "синие кнопки"
 
   // Изменение размера текста
   textBigger: /(?:текст|шрифт|заголов)\w*\s+(?:крупн|больш|увелич)/i,
@@ -115,26 +128,55 @@ export function classifyEditCommand(command: string): EditClassification {
     };
   }
 
-  // 3. Проверяем изменение цвета кнопок
-  const buttonColorMatch = cmd.match(PATTERNS.buttonColor);
-  if (buttonColorMatch) {
-    const colorWord = buttonColorMatch[1];
-    const tailwindColor = findTailwindColor(colorWord);
-    if (tailwindColor) {
-      return {
-        type: 'local_style',
-        confidence: 0.9,
-        details: {
-          colorChange: { to: tailwindColor },
-        },
-      };
+  // 3. Проверяем изменение цвета кнопок (несколько паттернов)
+  // Если в команде есть слово "кноп" - это про кнопки
+  if (cmd.includes('кноп')) {
+    // Пробуем разные паттерны
+    const patterns = [
+      PATTERNS.buttonColorChange,
+      PATTERNS.makeButtonsColor,
+      PATTERNS.buttonColorToNew,
+    ];
+
+    for (const pattern of patterns) {
+      const match = cmd.match(pattern);
+      if (match) {
+        const colorWord = match[1];
+        const tailwindColor = findTailwindColor(colorWord);
+        if (tailwindColor) {
+          return {
+            type: 'local_style',
+            confidence: 0.95,
+            details: {
+              colorChange: { to: tailwindColor },
+            },
+          };
+        }
+      }
+    }
+
+    // Проверяем паттерн "синие кнопки" (цвет перед словом кнопки)
+    const colorBeforeMatch = cmd.match(PATTERNS.colorButtons);
+    if (colorBeforeMatch) {
+      const colorWord = colorBeforeMatch[1];
+      const tailwindColor = findTailwindColor(colorWord);
+      if (tailwindColor) {
+        return {
+          type: 'local_style',
+          confidence: 0.9,
+          details: {
+            colorChange: { to: tailwindColor },
+          },
+        };
+      }
     }
   }
 
-  // 4. Проверяем общее изменение цвета
-  const colorMatch = cmd.match(PATTERNS.colorChange);
-  if (colorMatch) {
-    const colorWord = colorMatch[1];
+  // 4. Проверяем общее изменение цвета (если нет слова кнопки, но есть цвет)
+  // Ищем цвет в конце команды после "на"
+  const colorAfterNa = cmd.match(/на\s+(\w+)\s*$/);
+  if (colorAfterNa) {
+    const colorWord = colorAfterNa[1];
     const tailwindColor = findTailwindColor(colorWord);
     if (tailwindColor) {
       return {
@@ -313,11 +355,37 @@ export function applyLocalStyleEdit(
   // Изменение цвета кнопок
   if (details.colorChange) {
     const color = details.colorChange.to;
-    // Заменяем цвета в кнопках (bg-*-500, bg-*-600, etc)
-    const buttonColorRegex = /bg-(blue|green|red|purple|indigo|pink|yellow|orange|teal|cyan|emerald|sky|violet|fuchsia|rose|amber|lime|gray|slate|zinc|neutral|stone)-(\d{2,3})/g;
+    let modified = false;
 
-    if (buttonColorRegex.test(html)) {
-      newHtml = html.replace(buttonColorRegex, `bg-${color}-$2`);
+    // 1. Заменяем Tailwind классы bg-*-NNN
+    const bgColorRegex = /bg-(blue|green|red|purple|indigo|pink|yellow|orange|teal|cyan|emerald|sky|violet|fuchsia|rose|amber|lime|gray|slate|zinc|neutral|stone)-(\d{2,3})/g;
+    if (bgColorRegex.test(newHtml)) {
+      newHtml = newHtml.replace(bgColorRegex, `bg-${color}-$2`);
+      modified = true;
+    }
+
+    // 2. Заменяем hover:bg-*-NNN
+    const hoverBgRegex = /hover:bg-(blue|green|red|purple|indigo|pink|yellow|orange|teal|cyan|emerald|sky|violet|fuchsia|rose|amber|lime|gray|slate|zinc|neutral|stone)-(\d{2,3})/g;
+    if (hoverBgRegex.test(newHtml)) {
+      newHtml = newHtml.replace(hoverBgRegex, `hover:bg-${color}-$2`);
+      modified = true;
+    }
+
+    // 3. Заменяем text-*-NNN для текста кнопок
+    const textColorRegex = /text-(blue|green|red|purple|indigo|pink|yellow|orange|teal|cyan|emerald|sky|violet|fuchsia|rose|amber|lime)-(\d{2,3})/g;
+    if (textColorRegex.test(newHtml)) {
+      newHtml = newHtml.replace(textColorRegex, `text-${color}-$2`);
+      modified = true;
+    }
+
+    // 4. Заменяем border-*-NNN
+    const borderColorRegex = /border-(blue|green|red|purple|indigo|pink|yellow|orange|teal|cyan|emerald|sky|violet|fuchsia|rose|amber|lime)-(\d{2,3})/g;
+    if (borderColorRegex.test(newHtml)) {
+      newHtml = newHtml.replace(borderColorRegex, `border-${color}-$2`);
+      modified = true;
+    }
+
+    if (modified) {
       success = true;
       message = `Цвет изменён на ${color}`;
     }
