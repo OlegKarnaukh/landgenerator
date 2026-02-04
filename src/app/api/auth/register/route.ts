@@ -51,8 +51,32 @@ export async function POST(request: NextRequest) {
     });
   } catch (error: any) {
     console.error('Registration error:', error);
+
+    // Более информативные сообщения об ошибках
+    if (error.code === 'P2002') {
+      return NextResponse.json(
+        { error: 'Пользователь с таким email уже существует' },
+        { status: 400 }
+      );
+    }
+
+    if (error.message?.includes('prisma') || error.message?.includes('database')) {
+      return NextResponse.json(
+        { error: 'Ошибка базы данных. Проверьте настройки DATABASE_URL.' },
+        { status: 500 }
+      );
+    }
+
+    // Check if it's a connection error
+    if (error.code === 'P1001' || error.code === 'P1002') {
+      return NextResponse.json(
+        { error: 'Не удалось подключиться к базе данных' },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json(
-      { error: 'Ошибка регистрации' },
+      { error: error.message || 'Ошибка регистрации' },
       { status: 500 }
     );
   }
