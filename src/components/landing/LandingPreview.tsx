@@ -7,19 +7,35 @@ import { PricingSection } from './sections/PricingSection';
 import { CTASection } from './sections/CTASection';
 import { FAQSection } from './sections/FAQSection';
 import { StatsSection } from './sections/StatsSection';
+import { GallerySection } from './sections/GallerySection';
+import { TeamSection } from './sections/TeamSection';
+import { ProcessSection } from './sections/ProcessSection';
+import { ServicesSection } from './sections/ServicesSection';
+import { ContactSection } from './sections/ContactSection';
+import { PartnersSection } from './sections/PartnersSection';
 
 interface Section {
   id: string;
   type: string;
   order: number;
   data: any;
+  variant?: string;
+}
+
+interface LandingData {
+  sections: Section[];
+  theme?: {
+    primary?: string;
+    style?: 'modern' | 'classic' | 'bold' | 'minimal';
+  };
 }
 
 interface LandingPreviewProps {
   sections: Section[];
+  theme?: LandingData['theme'];
 }
 
-export function LandingPreview({ sections }: LandingPreviewProps) {
+export function LandingPreview({ sections, theme }: LandingPreviewProps) {
   // Guard against undefined or non-array sections
   if (!sections || !Array.isArray(sections) || sections.length === 0) {
     return (
@@ -56,23 +72,37 @@ export function LandingPreview({ sections }: LandingPreviewProps) {
 }
 
 function SectionRenderer({ section }: { section: Section }) {
-  const { type, data } = section;
+  const { type, data, variant } = section;
+  // Pass variant into data for sections that support it
+  const dataWithVariant = variant ? { ...data, variant } : data;
 
   switch (type) {
     case 'hero':
-      return <HeroSection data={data} />;
+      return <HeroSection data={dataWithVariant} />;
     case 'features':
-      return <FeaturesSection data={data} />;
+      return <FeaturesSection data={dataWithVariant} />;
     case 'testimonials':
-      return <TestimonialsSection data={data} />;
+      return <TestimonialsSection data={dataWithVariant} />;
     case 'pricing':
-      return <PricingSection data={data} />;
+      return <PricingSection data={dataWithVariant} />;
     case 'cta':
-      return <CTASection data={data} />;
+      return <CTASection data={dataWithVariant} />;
     case 'faq':
-      return <FAQSection data={data} />;
+      return <FAQSection data={dataWithVariant} />;
     case 'stats':
-      return <StatsSection data={data} />;
+      return <StatsSection data={dataWithVariant} />;
+    case 'gallery':
+      return <GallerySection data={dataWithVariant} />;
+    case 'team':
+      return <TeamSection data={dataWithVariant} />;
+    case 'process':
+      return <ProcessSection data={dataWithVariant} />;
+    case 'services':
+      return <ServicesSection data={dataWithVariant} />;
+    case 'contact':
+      return <ContactSection data={dataWithVariant} />;
+    case 'partners':
+      return <PartnersSection data={dataWithVariant} />;
     default:
       return (
         <div className="py-12 bg-gray-100 text-center text-gray-500">
