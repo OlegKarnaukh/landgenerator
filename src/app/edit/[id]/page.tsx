@@ -29,6 +29,7 @@ interface ChatMessage {
 
 type ViewMode = 'desktop' | 'tablet' | 'mobile';
 
+// Edit page for saved landings
 export default function EditLandingPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
