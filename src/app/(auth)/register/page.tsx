@@ -44,7 +44,9 @@ export default function RegisterPage() {
       if (result?.error) {
         setError('Аккаунт создан, но не удалось войти автоматически');
       } else {
-        router.push('/dashboard');
+        // Если есть сохранённый промпт — идём на /create, иначе на dashboard
+        const hasPendingPrompt = localStorage.getItem('landgen_pending_prompt');
+        router.push(hasPendingPrompt ? '/create' : '/dashboard');
         router.refresh();
       }
     } catch (err) {

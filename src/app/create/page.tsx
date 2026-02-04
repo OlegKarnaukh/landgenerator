@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
   Sparkles,
@@ -31,8 +32,11 @@ interface ChatMessage {
 
 type ViewMode = 'desktop' | 'tablet' | 'mobile';
 
+const PENDING_PROMPT_KEY = 'landgen_pending_prompt';
+
 export default function CreatePage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [description, setDescription] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,16 +54,26 @@ export default function CreatePage() {
   const [isEditing, setIsEditing] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
+  // При загрузке страницы проверяем есть ли сохранённый промпт
+  useEffect(() => {
+    if (status === 'authenticated') {
+      const pendingPrompt = localStorage.getItem(PENDING_PROMPT_KEY);
+      if (pendingPrompt) {
+        localStorage.removeItem(PENDING_PROMPT_KEY);
+        setDescription(pendingPrompt);
+        // Автоматически начинаем генерацию
+        setTimeout(() => {
+          startGeneration(pendingPrompt);
+        }, 100);
+      }
+    }
+  }, [status]);
+
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages]);
 
-  const handleGenerate = async () => {
-    if (!description.trim()) {
-      setError('Опишите ваш продукт или услугу');
-      return;
-    }
-
+  const startGeneration = async (prompt: string) => {
     setIsGenerating(true);
     setError(null);
     setChatMessages([]);
@@ -68,7 +82,7 @@ export default function CreatePage() {
       const response = await fetch('/api/generate-html', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ description }),
+        body: JSON.stringify({ description: prompt }),
       });
 
       const data = await response.json();
@@ -89,6 +103,22 @@ export default function CreatePage() {
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  const handleGenerate = async () => {
+    if (!description.trim()) {
+      setError('Опишите ваш продукт или услугу');
+      return;
+    }
+
+    // Если пользователь не авторизован — сохраняем промпт и редиректим на регистрацию
+    if (!session) {
+      localStorage.setItem(PENDING_PROMPT_KEY, description);
+      router.push('/register');
+      return;
+    }
+
+    await startGeneration(description);
   };
 
   const handleEdit = async () => {
