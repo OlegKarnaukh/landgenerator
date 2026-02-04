@@ -393,12 +393,18 @@ export default function EditLandingPage() {
 
       {/* Code modal overlay */}
       {showCode && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-gray-900 rounded-lg w-[90%] max-w-4xl h-[80vh] flex flex-col shadow-2xl">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700">
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80"
+          onClick={() => setShowCode(false)}
+        >
+          <div
+            className="bg-gray-900 rounded-lg w-[90%] max-w-4xl h-[80vh] flex flex-col shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700 bg-gray-800 rounded-t-lg">
               <span className="text-white font-medium">HTML код</span>
               <div className="flex items-center gap-2">
-                <Button size="sm" variant="ghost" onClick={handleCopyCode} className="text-gray-300 hover:text-white">
+                <Button size="sm" variant="ghost" onClick={handleCopyCode} className="text-gray-300 hover:text-white hover:bg-gray-700">
                   {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                   <span className="ml-2">{copied ? 'Скопировано' : 'Копировать'}</span>
                 </Button>
@@ -410,8 +416,8 @@ export default function EditLandingPage() {
                 </button>
               </div>
             </div>
-            <div className="flex-1 overflow-auto p-4">
-              <pre className="text-sm text-gray-300 font-mono whitespace-pre-wrap break-all">
+            <div className="flex-1 overflow-auto p-4 bg-gray-900">
+              <pre className="text-sm text-green-400 font-mono whitespace-pre-wrap break-all select-all">
                 {html}
               </pre>
             </div>
