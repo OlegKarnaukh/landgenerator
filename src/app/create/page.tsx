@@ -255,7 +255,7 @@ export default function CreatePage() {
     return (
       <div className="min-h-screen bg-gray-100 flex flex-col">
         {/* Toolbar */}
-        <div className="bg-white border-b shadow-sm">
+        <div className="bg-white border-b shadow-sm flex-shrink-0">
           <div className="flex items-center justify-between px-4 h-14">
             <div className="flex items-center gap-4">
               <Button variant="ghost" size="sm" onClick={handleReset}>
@@ -351,9 +351,9 @@ export default function CreatePage() {
         </div>
 
         {/* Main content */}
-        <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 flex overflow-hidden min-h-0">
           {/* Preview */}
-          <div className={`flex-1 flex justify-center p-4 overflow-auto ${showCode ? 'w-1/2' : 'w-full'}`}>
+          <div className="flex-1 flex justify-center p-4 overflow-auto">
             <div className={`${getPreviewWidth()} bg-white shadow-2xl rounded-lg overflow-hidden h-fit`}>
               <HtmlPreview html={html} className="min-h-[800px]" />
             </div>
@@ -361,8 +361,8 @@ export default function CreatePage() {
 
           {/* Code panel */}
           {showCode && (
-            <div className="w-1/2 border-l bg-gray-900 overflow-auto">
-              <pre className="p-4 text-sm text-gray-300 font-mono whitespace-pre-wrap">
+            <div className="w-[500px] flex-shrink-0 border-l bg-gray-900 overflow-auto">
+              <pre className="p-4 text-sm text-gray-300 font-mono whitespace-pre-wrap break-all">
                 {html}
               </pre>
             </div>
@@ -370,7 +370,7 @@ export default function CreatePage() {
 
           {/* Chat panel */}
           {chatOpen && (
-            <div className="w-96 border-l bg-white flex flex-col">
+            <div className="w-96 flex-shrink-0 border-l bg-white flex flex-col">
               <div className="p-4 border-b flex items-center justify-between">
                 <h3 className="font-semibold">Редактирование</h3>
                 <button onClick={() => setChatOpen(false)} className="text-gray-400 hover:text-gray-600">
