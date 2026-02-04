@@ -307,30 +307,27 @@ function detectSectionFromCommand(cmd: string): string | null {
  * Выполняет локальную замену текста
  */
 export function applyLocalTextEdit(html: string, pattern: string, replacement: string): EditResult {
+  const originalHtml = html;
   let newHtml = html;
-  let success = false;
 
   if (pattern === 'phone') {
     // Заменяем телефоны
-    const phoneRegex = /(\+7|8)[\s\-]?\(?\d{3}\)?[\s\-]?\d{3}[\s\-]?\d{2}[\s\-]?\d{2}/g;
-    if (phoneRegex.test(html)) {
-      newHtml = html.replace(phoneRegex, replacement);
-      success = true;
-    }
+    newHtml = html.replace(
+      /(\+7|8)[\s\-]?\(?\d{3}\)?[\s\-]?\d{3}[\s\-]?\d{2}[\s\-]?\d{2}/g,
+      replacement
+    );
   } else if (pattern === 'email') {
     // Заменяем email
-    const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
-    if (emailRegex.test(html)) {
-      newHtml = html.replace(emailRegex, replacement);
-      success = true;
-    }
+    newHtml = html.replace(
+      /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g,
+      replacement
+    );
   } else {
     // Обычная замена текста
-    if (html.includes(pattern)) {
-      newHtml = html.split(pattern).join(replacement);
-      success = true;
-    }
+    newHtml = html.split(pattern).join(replacement);
   }
+
+  const success = newHtml !== originalHtml;
 
   return {
     success,
@@ -355,37 +352,40 @@ export function applyLocalStyleEdit(
   // Изменение цвета кнопок
   if (details.colorChange) {
     const color = details.colorChange.to;
-    let modified = false;
+    const originalHtml = newHtml;
 
-    // 1. Заменяем Tailwind классы bg-*-NNN
-    const bgColorRegex = /bg-(blue|green|red|purple|indigo|pink|yellow|orange|teal|cyan|emerald|sky|violet|fuchsia|rose|amber|lime|gray|slate|zinc|neutral|stone)-(\d{2,3})/g;
-    if (bgColorRegex.test(newHtml)) {
-      newHtml = newHtml.replace(bgColorRegex, `bg-${color}-$2`);
-      modified = true;
-    }
+    // 1. Заменяем Tailwind классы bg-*-NNN (фон)
+    newHtml = newHtml.replace(
+      /bg-(blue|green|red|purple|indigo|pink|yellow|orange|teal|cyan|emerald|sky|violet|fuchsia|rose|amber|lime|gray|slate|zinc|neutral|stone)-(\d{2,3})/g,
+      `bg-${color}-$2`
+    );
 
     // 2. Заменяем hover:bg-*-NNN
-    const hoverBgRegex = /hover:bg-(blue|green|red|purple|indigo|pink|yellow|orange|teal|cyan|emerald|sky|violet|fuchsia|rose|amber|lime|gray|slate|zinc|neutral|stone)-(\d{2,3})/g;
-    if (hoverBgRegex.test(newHtml)) {
-      newHtml = newHtml.replace(hoverBgRegex, `hover:bg-${color}-$2`);
-      modified = true;
-    }
+    newHtml = newHtml.replace(
+      /hover:bg-(blue|green|red|purple|indigo|pink|yellow|orange|teal|cyan|emerald|sky|violet|fuchsia|rose|amber|lime|gray|slate|zinc|neutral|stone)-(\d{2,3})/g,
+      `hover:bg-${color}-$2`
+    );
 
-    // 3. Заменяем text-*-NNN для текста кнопок
-    const textColorRegex = /text-(blue|green|red|purple|indigo|pink|yellow|orange|teal|cyan|emerald|sky|violet|fuchsia|rose|amber|lime)-(\d{2,3})/g;
-    if (textColorRegex.test(newHtml)) {
-      newHtml = newHtml.replace(textColorRegex, `text-${color}-$2`);
-      modified = true;
-    }
+    // 3. Заменяем text-*-NNN (цвет текста, кроме white/black/gray)
+    newHtml = newHtml.replace(
+      /text-(blue|green|red|purple|indigo|pink|yellow|orange|teal|cyan|emerald|sky|violet|fuchsia|rose|amber|lime)-(\d{2,3})/g,
+      `text-${color}-$2`
+    );
 
     // 4. Заменяем border-*-NNN
-    const borderColorRegex = /border-(blue|green|red|purple|indigo|pink|yellow|orange|teal|cyan|emerald|sky|violet|fuchsia|rose|amber|lime)-(\d{2,3})/g;
-    if (borderColorRegex.test(newHtml)) {
-      newHtml = newHtml.replace(borderColorRegex, `border-${color}-$2`);
-      modified = true;
-    }
+    newHtml = newHtml.replace(
+      /border-(blue|green|red|purple|indigo|pink|yellow|orange|teal|cyan|emerald|sky|violet|fuchsia|rose|amber|lime|gray|slate|zinc|neutral|stone)-(\d{2,3})/g,
+      `border-${color}-$2`
+    );
 
-    if (modified) {
+    // 5. Заменяем ring-*-NNN
+    newHtml = newHtml.replace(
+      /ring-(blue|green|red|purple|indigo|pink|yellow|orange|teal|cyan|emerald|sky|violet|fuchsia|rose|amber|lime)-(\d{2,3})/g,
+      `ring-${color}-$2`
+    );
+
+    // Проверяем изменился ли HTML
+    if (newHtml !== originalHtml) {
       success = true;
       message = `Цвет изменён на ${color}`;
     }
