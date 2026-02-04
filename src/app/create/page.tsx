@@ -351,9 +351,9 @@ export default function CreatePage() {
         </div>
 
         {/* Main content */}
-        <div className="flex-1 flex overflow-hidden min-h-0">
+        <div className="flex-1 flex overflow-hidden min-h-0 relative">
           {/* Preview */}
-          <div className="flex-1 flex justify-center p-4 overflow-auto">
+          <div className="flex-1 flex justify-center p-4 overflow-auto bg-gray-100">
             <div className={`${getPreviewWidth()} bg-white shadow-2xl rounded-lg overflow-hidden h-fit`}>
               <HtmlPreview html={html} className="min-h-[800px]" />
             </div>
@@ -361,7 +361,16 @@ export default function CreatePage() {
 
           {/* Code panel */}
           {showCode && (
-            <div className="w-[500px] flex-shrink-0 border-l bg-gray-900 overflow-auto">
+            <div className="w-[500px] flex-shrink-0 border-l bg-gray-900 overflow-auto relative z-10">
+              <div className="sticky top-0 bg-gray-800 px-4 py-2 border-b border-gray-700 flex justify-between items-center">
+                <span className="text-gray-300 text-sm font-medium">HTML код</span>
+                <button
+                  onClick={() => setShowCode(false)}
+                  className="text-gray-400 hover:text-white"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
               <pre className="p-4 text-sm text-gray-300 font-mono whitespace-pre-wrap break-all">
                 {html}
               </pre>
