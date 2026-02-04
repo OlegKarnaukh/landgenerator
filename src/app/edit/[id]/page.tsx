@@ -331,31 +331,13 @@ export default function EditLandingPage() {
       </div>
 
       {/* Main content */}
-      <div className="flex-1 flex overflow-hidden min-h-0 relative">
+      <div className="flex-1 flex overflow-hidden min-h-0">
         {/* Preview */}
         <div className="flex-1 flex justify-center p-4 overflow-auto bg-gray-100">
           <div className={`${getPreviewWidth()} bg-white shadow-2xl rounded-lg overflow-hidden h-fit`}>
             <HtmlPreview html={html} className="min-h-[800px]" />
           </div>
         </div>
-
-        {/* Code panel */}
-        {showCode && (
-          <div className="w-[500px] flex-shrink-0 border-l bg-gray-900 overflow-auto relative z-10">
-            <div className="sticky top-0 bg-gray-800 px-4 py-2 border-b border-gray-700 flex justify-between items-center">
-              <span className="text-gray-300 text-sm font-medium">HTML код</span>
-              <button
-                onClick={() => setShowCode(false)}
-                className="text-gray-400 hover:text-white"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <pre className="p-4 text-sm text-gray-300 font-mono whitespace-pre-wrap break-all">
-              {html}
-            </pre>
-          </div>
-        )}
 
         {/* Chat panel */}
         {chatOpen && (
@@ -408,6 +390,34 @@ export default function EditLandingPage() {
           </div>
         )}
       </div>
+
+      {/* Code modal overlay */}
+      {showCode && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-gray-900 rounded-lg w-[90%] max-w-4xl h-[80vh] flex flex-col shadow-2xl">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700">
+              <span className="text-white font-medium">HTML код</span>
+              <div className="flex items-center gap-2">
+                <Button size="sm" variant="ghost" onClick={handleCopyCode} className="text-gray-300 hover:text-white">
+                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  <span className="ml-2">{copied ? 'Скопировано' : 'Копировать'}</span>
+                </Button>
+                <button
+                  onClick={() => setShowCode(false)}
+                  className="text-gray-400 hover:text-white p-1"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+            <div className="flex-1 overflow-auto p-4">
+              <pre className="text-sm text-gray-300 font-mono whitespace-pre-wrap break-all">
+                {html}
+              </pre>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
