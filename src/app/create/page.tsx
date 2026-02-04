@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 import {
   ArrowLeft,
   Sparkles,
@@ -16,7 +17,9 @@ import {
   Copy,
   Check,
   MessageSquare,
-  X
+  X,
+  Save,
+  User
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { HtmlPreview } from '@/components/landing/HtmlPreview';
@@ -29,6 +32,7 @@ interface ChatMessage {
 type ViewMode = 'desktop' | 'tablet' | 'mobile';
 
 export default function CreatePage() {
+  const { data: session } = useSession();
   const [description, setDescription] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,6 +40,8 @@ export default function CreatePage() {
   const [showCode, setShowCode] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('desktop');
   const [copied, setCopied] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [savedId, setSavedId] = useState<string | null>(null);
 
   // Chat state
   const [chatOpen, setChatOpen] = useState(false);
@@ -150,6 +156,46 @@ export default function CreatePage() {
     setChatMessages([]);
     setShowCode(false);
     setChatOpen(false);
+    setSavedId(null);
+  };
+
+  const handleSave = async () => {
+    if (!html || !session) return;
+
+    setIsSaving(true);
+    try {
+      const res = await fetch('/api/landings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: description.slice(0, 100),
+          description,
+          html,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setSavedId(data.id);
+        setChatMessages((prev) => [
+          ...prev,
+          { role: 'assistant', content: 'Лендинг сохранён! Вы найдёте его в дашборде.' },
+        ]);
+      } else {
+        const data = await res.json();
+        setChatMessages((prev) => [
+          ...prev,
+          { role: 'assistant', content: `Ошибка сохранения: ${data.error}` },
+        ]);
+      }
+    } catch (err) {
+      setChatMessages((prev) => [
+        ...prev,
+        { role: 'assistant', content: 'Ошибка сохранения' },
+      ]);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const getPreviewWidth = () => {
@@ -231,10 +277,34 @@ export default function CreatePage() {
                 )}
                 {copied ? 'Скопировано' : 'Копировать'}
               </Button>
-              <Button size="sm" onClick={handleDownload}>
+              <Button variant="ghost" size="sm" onClick={handleDownload}>
                 <Download className="h-4 w-4 mr-2" />
                 Скачать
               </Button>
+              {session ? (
+                <Button
+                  size="sm"
+                  onClick={handleSave}
+                  disabled={isSaving || !!savedId}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  {isSaving ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : savedId ? (
+                    <Check className="h-4 w-4 mr-2" />
+                  ) : (
+                    <Save className="h-4 w-4 mr-2" />
+                  )}
+                  {savedId ? 'Сохранено' : 'Сохранить'}
+                </Button>
+              ) : (
+                <Link href="/login">
+                  <Button size="sm" variant="outline">
+                    <User className="h-4 w-4 mr-2" />
+                    Войти для сохранения
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
         </div>
@@ -322,6 +392,25 @@ export default function CreatePage() {
             <Sparkles className="h-6 w-6 text-primary" />
             <span className="font-bold text-xl">LandGen.AI</span>
           </Link>
+          <div className="flex items-center gap-4">
+            {session ? (
+              <Link href="/dashboard" className="text-white/70 hover:text-white text-sm">
+                Мои лендинги
+              </Link>
+            ) : (
+              <>
+                <Link href="/login" className="text-white/70 hover:text-white text-sm">
+                  Войти
+                </Link>
+                <Link
+                  href="/register"
+                  className="px-4 py-2 bg-primary text-white text-sm rounded-lg hover:bg-primary/90"
+                >
+                  Регистрация
+                </Link>
+              </>
+            )}
+          </div>
         </div>
       </header>
 

@@ -188,31 +188,17 @@ AI-генерации выглядят одинаково из-за "безоп�
 
 ## 🖼 ИЗОБРАЖЕНИЯ
 
-### Принципы подбора (НЕ жёсткий список, а логика):
+### Принципы подбора:
 
-1. **Релевантность** — фото должно показывать ТО, о чём речь:
-   - Секция "процедура" → фото процедуры или кабинета
-   - Секция "результат" → фото результата (до/после, довольный клиент)
-   - Секция "команда" → фото людей (приветливые лица, НЕ в масках для бьюти-ниш)
+1. **Релевантность** — фото должно соответствовать контексту секции
+2. **Люди** — при использовании фото людей выбирай европейскую внешность, приветливые открытые лица
+3. **Качество** — только профессиональные фото с хорошим освещением
+4. **Реалистичность** — избегай слишком "постановочных" студийных фото
 
-2. **Эмоция** — фото должно вызывать нужное чувство:
-   - Бьюти/спа: спокойствие, забота, чистота
-   - Фитнес: энергия, сила, достижение
-   - Бизнес: профессионализм, надёжность
-   - Еда: аппетит, уют, свежесть
+### Источник:
+Unsplash: https://images.unsplash.com/photo-[ID]?w=800&q=80
 
-3. **Качество** — только профессиональные фото:
-   - Хорошее освещение
-   - Чистый фон или приятный интерьер
-   - Реалистичные люди (не "пластиковые" модели)
-
-### Источники:
-- Unsplash: https://images.unsplash.com/photo-[ID]?w=800&q=80
-- Аватары для отзывов: https://api.dicebear.com/7.x/avataaars/svg?seed=ИмяФамилия
-
-### Поиск ID на Unsplash:
-Используй тематические запросы: "laser hair removal", "beauty salon interior", "spa treatment", "happy client" и т.д.
-ID — это часть URL после /photo- (например: 1560066984-138dadb4c035)
+Для отзывов используй реальные фото людей с Unsplash (портреты), а не заглушки или аватары.
 
 ---
 
@@ -281,8 +267,15 @@ ID — это часть URL после /photo- (например: 1560066984-13
 - Мобильное меню (hamburger)
 - Smooth scroll по якорям
 - Hover-эффекты на кнопках и карточках
-- Форма с визуальной валидацией
 - CSS-анимации (@keyframes)
+
+---
+
+## ⚠️ КРИТИЧНО: ЗАВЕРШЕНИЕ HTML
+
+ОБЯЗАТЕЛЬНО закрой ВСЕ теги и заверши документ тегами </body></html>.
+Если чувствуешь что не хватает места — сократи количество секций до 8-10, но ЗАВЕРШИ HTML полностью.
+Незавершённый HTML = провал.
 
 ---
 
@@ -312,34 +305,59 @@ ${description}
 
 Требования:
 - Уникальный дизайн (НЕ шаблонный)
-- 10-15 секций с подробным контентом
+- 8-10 качественных секций (лучше меньше, но завершённый HTML)
 - Глубокая проработка болей и возражений ЦА
 - Конкретика в текстах (цифры, сроки, гарантии)
 - Цены в рублях (₽), реалистичные для РФ
 - Русский язык
+- ОБЯЗАТЕЛЬНО заверши HTML тегами </body></html>
 
 Выведи ТОЛЬКО готовый HTML-код.`;
 
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 16000,
-      messages: [
-        {
-          role: 'user',
-          content: userPrompt,
-        },
-      ],
-      system: LANDING_SKILL,
-    });
-
     let html = '';
-    for (const block of response.content) {
-      if (block.type === 'text') {
-        html += block.text;
+    let totalTokens = 0;
+    const messages: { role: 'user' | 'assistant'; content: string }[] = [
+      { role: 'user', content: userPrompt },
+    ];
+
+    // Генерация с возможностью продолжения если обрезалось
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const response = await anthropic.messages.create({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 16000,
+        messages,
+        system: LANDING_SKILL,
+      });
+
+      let partialHtml = '';
+      for (const block of response.content) {
+        if (block.type === 'text') {
+          partialHtml += block.text;
+        }
       }
+
+      html += partialHtml;
+      totalTokens += (response.usage?.input_tokens || 0) + (response.usage?.output_tokens || 0);
+
+      // Проверяем завершён ли HTML
+      const hasClosingHtml = html.includes('</html>');
+      const stoppedByLength = response.stop_reason === 'max_tokens';
+
+      if (hasClosingHtml || !stoppedByLength) {
+        break; // HTML завершён или модель закончила сама
+      }
+
+      // HTML обрезался — запрашиваем продолжение
+      messages.push({ role: 'assistant', content: partialHtml });
+      messages.push({ role: 'user', content: 'Продолжи HTML с того места где остановился. Выведи ТОЛЬКО продолжение кода, без повторений. Обязательно заверши </body></html>.' });
     }
 
     html = cleanHtml(html);
+
+    // Если всё ещё нет закрывающего тега — добавляем принудительно
+    if (!html.includes('</html>')) {
+      html += '\n</body>\n</html>';
+    }
 
     if (!html || html.length < 500) {
       return NextResponse.json(
@@ -352,7 +370,7 @@ ${description}
       id: nanoid(10),
       html,
       createdAt: new Date().toISOString(),
-      tokensUsed: response.usage?.input_tokens + response.usage?.output_tokens || 0,
+      tokensUsed: totalTokens,
       description,
     });
   } catch (error: any) {

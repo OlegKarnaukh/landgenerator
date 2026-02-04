@@ -94,11 +94,12 @@ model Landing {
   slug          String
   description   String?   @db.Text  // Original user input for generation
 
-  // Landing content stored as JSON
-  content       Json      // { sections: Section[] }
+  // Landing content - full HTML
+  html          String    @db.Text
 
-  // Styling
-  theme         Json      // LandingTheme object
+  // Optional: structured content for future editing
+  content       Json?     // { sections: Section[] }
+  theme         Json?     // LandingTheme object
 
   // Publishing
   published     Boolean   @default(false)
