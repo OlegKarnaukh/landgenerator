@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { HtmlPreview } from '@/components/landing/HtmlPreview';
+import { LoadingOverlay } from '@/components/ui/LoadingOverlay';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -386,6 +387,9 @@ export default function EditLandingPage() {
           </div>
         )}
       </div>
+
+      {/* Loading overlay for editing */}
+      <LoadingOverlay isVisible={isEditing} type="edit" />
 
       {/* Code modal overlay */}
       {showCode && (

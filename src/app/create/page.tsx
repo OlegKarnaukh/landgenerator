@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { HtmlPreview } from '@/components/landing/HtmlPreview';
+import { LoadingOverlay } from '@/components/ui/LoadingOverlay';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -406,6 +407,9 @@ export default function CreatePage() {
           )}
         </div>
 
+        {/* Loading overlay for editing */}
+        <LoadingOverlay isVisible={isEditing} type="edit" />
+
         {/* Code modal overlay */}
         {showCode && (
           <div className="fixed inset-0 z-[9999] bg-black/90 flex flex-col">
@@ -440,6 +444,8 @@ export default function CreatePage() {
   // Initial generation form
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-950">
+      {/* Loading overlay for generation */}
+      <LoadingOverlay isVisible={isGenerating} type="generate" />
       {/* Header */}
       <header className="border-b border-white/10">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
