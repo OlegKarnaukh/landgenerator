@@ -127,7 +127,10 @@ export default function EditLandingPage() {
       setHtml(data.html);
       setHasChanges(true);
 
-      const responseMsg = `Готово! (${data.tokensUsed} токенов)`;
+      // Сообщение с информацией о применённых изменениях
+      const responseMsg = data.message
+        ? `${data.message} (${data.tokensUsed} токенов)`
+        : `Готово! (${data.tokensUsed} токенов)`;
 
       setChatMessages((prev) => [
         ...prev,
