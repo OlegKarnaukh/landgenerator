@@ -18,10 +18,10 @@ import {
   MessageSquare,
   X,
   Save,
+  Sparkles,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { HtmlPreview } from '@/components/landing/HtmlPreview';
-import { LoadingOverlay } from '@/components/ui/LoadingOverlay';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -330,9 +330,19 @@ export default function EditLandingPage() {
       {/* Main content */}
       <div className="flex-1 flex overflow-hidden min-h-0">
         {/* Preview */}
-        <div className="flex-1 flex justify-center p-4 overflow-auto bg-gray-100">
-          <div className={`${getPreviewWidth()} bg-white shadow-2xl rounded-lg overflow-hidden h-fit`}>
+        <div className="flex-1 flex justify-center p-4 overflow-auto bg-gray-100 relative">
+          <div className={`${getPreviewWidth()} bg-white shadow-2xl rounded-lg overflow-hidden h-fit relative`}>
             <HtmlPreview html={html} className="min-h-[800px]" />
+
+            {/* Light overlay during editing */}
+            {isEditing && (
+              <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] flex items-center justify-center z-10 transition-all duration-300">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="w-12 h-12 rounded-full border-4 border-primary/30 border-t-primary animate-spin" />
+                  <span className="text-gray-600 font-medium">Обновляю страницу...</span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -360,9 +370,25 @@ export default function EditLandingPage() {
                 </div>
               ))}
               {isEditing && (
-                <div className="mr-8 bg-gray-100 rounded-lg p-3 text-sm flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Применяю изменения...
+                <div className="mr-8 space-y-2">
+                  <div className="bg-gray-100 rounded-lg p-3 text-sm">
+                    <div className="flex items-center gap-2 text-gray-500 mb-2">
+                      <div className="w-5 h-5 rounded-full bg-orange-100 flex items-center justify-center">
+                        <Sparkles className="w-3 h-3 text-orange-500" />
+                      </div>
+                      <span className="font-medium">AI Assistant</span>
+                    </div>
+                    <div className="space-y-1.5 text-gray-600">
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        <span>Анализирую запрос...</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-gray-400">
+                        <div className="w-3 h-3" />
+                        <span>Редактирую landing/страницу</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
               <div ref={chatEndRef} />
@@ -387,9 +413,6 @@ export default function EditLandingPage() {
           </div>
         )}
       </div>
-
-      {/* Loading overlay for editing */}
-      <LoadingOverlay isVisible={isEditing} type="edit" />
 
       {/* Code modal overlay */}
       {showCode && (
